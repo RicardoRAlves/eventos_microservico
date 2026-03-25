@@ -21,6 +21,9 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.exchange.error.create.name}")
     private String exchangeCreateErrorName;
 
+    @Value("${rabbitmq.exchange.create-notification.name}")
+    private String createNotificationExchange;
+
     @Value("${rabbitmq.exchange.get-all.name}")
     private String exchangeGetAllName;
 
@@ -38,6 +41,11 @@ public class RabbitMqConfig {
     @Bean
     public FanoutExchange eventCreateErrorExchange(){
         return new FanoutExchange(exchangeCreateErrorName);
+    }
+
+    @Bean
+    public FanoutExchange eventCreateNotificationoExchange(){
+        return new FanoutExchange(createNotificationExchange);
     }
 
     @Bean

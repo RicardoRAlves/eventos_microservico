@@ -7,6 +7,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.Arrays;
+import static java.util.Collections.singletonList;
 import java.util.List;
 
 @Slf4j
@@ -14,29 +16,27 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProcessorProducer {
 
-    @Value("${rabbitmq.exchange.create.name}")
-    private String createExchange;
+    @Value("${rabbitmq.exchange.create-notification.name}")
+    private String createNotificationExchange;
 
-    @Value("${rabbitmq.exchange.create.name}")
+    @Value("${rabbitmq.exchange.error.create.name}")
     private String errorCreateExchange;
-
-    @Value("${rabbitmq.exchange.get-all.name}")
-    private String getAllExchange;
 
     private final RabbitTemplate rabbitTemplate;
 
     public void sendEventForSuccessQueue(Event event){
-        rabbitTemplate.convertAndSend(createExchange, "", event);
-        log.info("Event sent to : {} successfuly", createExchange);
+        rabbitTemplate.convertAndSend(createNotificationExchange, "", singletonList(event));
+        log.info("Event sent to : {} successfuly", createNotificationExchange);
+    }
+
+    public void sendAllEvents(List<Event> events){
+        rabbitTemplate.convertAndSend(createNotificationExchange, "", events);
+        log.info("sending all events to : {} successfuly", createNotificationExchange);
     }
 
     public void sendEventForFailQueue(Event event){
         rabbitTemplate.convertAndSend(errorCreateExchange, "", event);
-        log.info("Error Event sent to : {} successfuly", errorCreateExchange);
+        log.info("Error Event sent to : {}", errorCreateExchange);
     }
 
-    public void sendEventForGetAllQueue(List<Event> event){
-        rabbitTemplate.convertAndSend(getAllExchange, "", event);
-        log.info("Sending All Events : {} for client", getAllExchange);
-    }
 }

@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class Evento {
+public class Event {
     private Long id;
     private String titulo;
     private String descricao;

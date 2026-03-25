@@ -1,7 +1,6 @@
 package com.br.capoeira.eventos.evento_api.config;
 
-import org.springframework.amqp.core.Exchange;
-import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -16,29 +15,51 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMqConfig {
 
-    //Definindo o nome da exchange
-    @Value("${rabbitmq.exchange.name}")
-    private String exchangeName;
+    @Value("${rabbitmq.exchange.create.name}")
+    private String exchangeCreateName;
 
-    // Criando a exchange
+    @Value("${rabbitmq.exchange.get-all.name}")
+    private String exchangeGetAll;
+
+    @Value("${rabbitmq.exchange.error.create.name}")
+    private String exchangeCreateError;
+
+    @Value("${rabbitmq.create.error.queue.name}")
+    private String queueErrorCreate;
+
     @Bean
-    public Exchange pedidosExchange(){
-        return new FanoutExchange(exchangeName);
+    public Exchange createExchange(){
+        return new FanoutExchange(exchangeCreateName);
     }
 
-    //Criando uma rabbit admin
+    @Bean
+    public Exchange getAllExchange(){
+        return new FanoutExchange(exchangeGetAll);
+    }
+
+    @Bean
+    public FanoutExchange createErrorExchange(){
+        return new FanoutExchange(exchangeCreateError);
+    }
+
+    @Bean
+    public Queue queueError(){ return new Queue(queueErrorCreate);}
+
+    @Bean
+    public Binding binding() { return BindingBuilder.bind(queueError()).to(createErrorExchange());
+    }
+
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory){
         return new RabbitAdmin(connectionFactory);
     }
 
-    // Responsavel por converter o objeto java em json
     @Bean
     public MessageConverter messageConverter(){
         return new Jackson2JsonMessageConverter();
     }
 
-    // Responsavel por enviar a mensagem
+
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter messageConverter){
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
@@ -46,7 +67,6 @@ public class RabbitMqConfig {
         return rabbitTemplate;
     }
 
-    //Listener para ouvir quando a aplicação esta pronta e inicializa o rabbit admin
     @Bean
     public ApplicationListener<ApplicationReadyEvent> applicationReadyEventApplicationListener(RabbitAdmin rabbitAdmin){
         return event -> rabbitAdmin.initialize();

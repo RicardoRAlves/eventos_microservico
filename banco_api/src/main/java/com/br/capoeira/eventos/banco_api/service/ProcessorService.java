@@ -23,7 +23,7 @@ public class ProcessorService {
         log.info("Getting all events");
         var events = eventoRepository.findAll();
         if (!events.isEmpty()){
-            producer.sendEventForGetAllQueue(events);
+            producer.sendAllEvents(events);
         }
     }
 

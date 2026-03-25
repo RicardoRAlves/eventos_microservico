@@ -19,4 +19,5 @@ public class EventoDto {
     private String endereco;
     private TipoContato tipoContato;
     private String contato;
+    private String imagem;
 }

@@ -2,8 +2,8 @@ package com.br.capoeira.eventos.evento_api.controller;
 
 import com.br.capoeira.eventos.evento_api.dto.EventoDto;
 import com.br.capoeira.eventos.evento_api.mapper.EventoMapper;
-import com.br.capoeira.eventos.evento_api.model.Evento;
-import com.br.capoeira.eventos.evento_api.service.EventoService;
+import com.br.capoeira.eventos.evento_api.model.Event;
+import com.br.capoeira.eventos.evento_api.service.EventService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -24,59 +24,45 @@ public class EventosController {
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
     private final EventoMapper eventoMapper;
-    private final EventoService eventoService;
+    private final EventService eventService;
 
-    public EventosController(EventoMapper eventoMapper, EventoService eventoService){
+    public EventosController(EventoMapper eventoMapper, EventService eventService){
         this.eventoMapper = eventoMapper;
-        this.eventoService = eventoService;
+        this.eventService = eventService;
     }
 
     @GetMapping("/all")
     @Operation(summary = "Retorna uma lista de Eventos", description = "Responsavel por retornar todos os eventos na base de dados",
             responses = @ApiResponse(responseCode = "200", description = "OK",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Evento.class)))
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Event.class)))
     )
-    public ResponseEntity<List<Evento>> buscaTodosEventos(){
-
-        return ResponseEntity.ok(eventoService.buscaTodosEventos());
+    public ResponseEntity<String> buscaTodosEventos(){
+        eventService.findAllEvents();
+        return ResponseEntity.ok("Added request to queue");
     }
 
-    @GetMapping()
-    @Operation(summary = "Retorna um Evento", description = "Responsavel por retornar um evento, pesquisando pelo id",
-            responses = @ApiResponse(responseCode = "200", description = "OK",
-                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = Evento.class)))
-    )
-    public ResponseEntity<Evento> retornaEventoPorId(@RequestParam("id") Long id){
-        Evento evento = eventoService.buscarEventoPorId(id);
-        logger.info("Retornando evento {}", evento);
-        return ResponseEntity.ok(evento);
-    }
-    @PostMapping("/cadastro")
+    @PostMapping("/create")
     @Operation(summary = "Cadastra um novo evento", description = "Contem a operação para criar um novo evento",
             responses = @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
     )
-    public ResponseEntity<Evento> criarEvento(@RequestBody EventoDto eventoDto){
-        logger.info("Evento recebido, {}", eventoDto);
-        Evento evento = eventoMapper.eventoDtoToEvento(eventoDto);
-        evento = eventoService.enviaEventoFila(evento);
-        return (evento != null) ?
-                ResponseEntity.status(HttpStatus.CREATED).body(evento) :
-                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(evento);
+    public ResponseEntity<String> createEvent(@RequestBody EventoDto eventoDto){
+        logger.info("Event recebido, {}", eventoDto);
+        Event event = eventoMapper.eventoDtoToEvento(eventoDto);
+        eventService.sendingNewEventToProcessor(event);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Added new event to queue");
     }
 
     @PutMapping("/upload")
-    @Operation(summary = "Enviar Imagem do Folder do Evento", description = "Responsavel por receber o envio do arquivo da imagem e salvar no banco o caminho dela",
+    @Operation(summary = "Enviar Imagem do Folder do Event", description = "Responsavel por receber o envio do arquivo da imagem e salvar no banco o caminho dela",
             responses = @ApiResponse(responseCode = "201", description = "Recurso atualizado com sucesso",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
     )
-    public ResponseEntity<Evento> uploadImagem(
+    public ResponseEntity<String> uploadImagem(
             @RequestParam("imagem") MultipartFile file,
             @RequestParam("id") Long id){
-        logger.info("Evento id recebido, {}", id);
-        Evento evento = eventoService.atualizarFoto(file, id);
-        return (evento != null) ?
-                ResponseEntity.ok(evento) :
-                ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        logger.info("Event id recebido, {}", id);
+        var photoPath = eventService.updatePhoto(file);
+        return ResponseEntity.ok(photoPath);
     }
 }
