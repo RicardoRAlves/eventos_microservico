@@ -4,11 +4,11 @@ Rest API que recebe a solicitação para adicionar novos eventos, uma api para t
 
 Evento Pedido API:
 - Recebe uma solicitação via endpoint para adicionar no AWS S3
-- Faz a solicitação para adicionar um novo evento
+- Faz a solicitação para adicionar um novo event
 - Realização uma solicitação para enviar todos eventos para o android/client
 
 Evento Banco Api:
-- Atraves de uma fila do rabbitMQ faz a adição na base de dados de um novo evento
+- Atraves de uma fila do rabbitMQ faz a adição na base de dados de um novo event
 - Atraves de uma fila faz o envio dos eventos para os clients
 
 Evento Notificacao API:

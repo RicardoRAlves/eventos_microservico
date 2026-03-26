@@ -1,4 +1,4 @@
-package com.br.capoeira.eventos.evento_api.config;
+package com.br.capoeira.eventos.banco_api.config;
 
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -18,35 +18,59 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.exchange.create.name}")
     private String exchangeCreateName;
 
-    @Value("${rabbitmq.exchange.get-all.name}")
-    private String exchangeGetAll;
-
     @Value("${rabbitmq.exchange.error.create.name}")
-    private String exchangeCreateError;
+    private String exchangeCreateErrorName;
 
-    @Value("${rabbitmq.create.error.queue.name}")
-    private String queueErrorCreate;
+    @Value("${rabbitmq.exchange.create-notification.name}")
+    private String createNotificationExchange;
+
+    @Value("${rabbitmq.exchange.get-all.name}")
+    private String exchangeGetAllName;
+
+    @Value("${rabbitmq.create.queue.name}")
+    private String queueCreateName;
+
+    @Value("${rabbitmq.get-all.queue.name}")
+    private String queueGetAllName;
 
     @Bean
-    public Exchange createExchange(){
+    public FanoutExchange eventCreateExchange(){
         return new FanoutExchange(exchangeCreateName);
     }
 
     @Bean
-    public Exchange getAllExchange(){
-        return new FanoutExchange(exchangeGetAll);
+    public FanoutExchange eventCreateErrorExchange(){
+        return new FanoutExchange(exchangeCreateErrorName);
     }
 
     @Bean
-    public FanoutExchange createErrorExchange(){
-        return new FanoutExchange(exchangeCreateError);
+    public FanoutExchange eventCreateNotificationoExchange(){
+        return new FanoutExchange(createNotificationExchange);
     }
 
     @Bean
-    public Queue queueError(){ return new Queue(queueErrorCreate);}
+    public FanoutExchange eventGetAllExchange(){
+        return new FanoutExchange(exchangeGetAllName);
+    }
 
     @Bean
-    public Binding binding() { return BindingBuilder.bind(queueError()).to(createErrorExchange());
+    public Queue processorQueueCreate() {
+        return new Queue(queueCreateName);
+    }
+
+    @Bean
+    public Queue processorQueueGetAll() {
+        return new Queue(queueGetAllName);
+    }
+
+    @Bean
+    public Binding bindingQueueCreate(){
+        return BindingBuilder.bind(processorQueueCreate()).to(eventCreateExchange());
+    }
+
+    @Bean
+    public Binding bindingQueueGetAll(){
+        return BindingBuilder.bind(processorQueueGetAll()).to(eventGetAllExchange());
     }
 
     @Bean
@@ -58,7 +82,6 @@ public class RabbitMqConfig {
     public MessageConverter messageConverter(){
         return new Jackson2JsonMessageConverter();
     }
-
 
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter messageConverter){

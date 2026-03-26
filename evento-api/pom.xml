@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.br.capoeira.eventos</groupId>
-	<artifactId>evento-api</artifactId>
+	<artifactId>event-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>evento-api</name>
+	<name>event-api</name>
 	<description>Api para realizar requisições para Api</description>
 	<url/>
 	<licenses>

@@ -12,7 +12,7 @@
 	<artifactId>notificacao</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>notificacao</name>
-	<description>Projeto Responsavel por receber um novo evento e avisar o android</description>
+	<description>Projeto Responsavel por receber um novo event e avisar o android</description>
 	<url/>
 	<licenses>
 		<license/>
