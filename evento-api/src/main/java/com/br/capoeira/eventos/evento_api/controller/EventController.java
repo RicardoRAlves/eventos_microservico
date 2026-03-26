@@ -8,28 +8,22 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
-
+@Slf4j
 @Controller
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/evento")
-public class EventosController {
-    private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
+public class EventController {
     private final EventoMapper eventoMapper;
     private final EventService eventService;
 
-    public EventosController(EventoMapper eventoMapper, EventService eventService){
-        this.eventoMapper = eventoMapper;
-        this.eventService = eventService;
-    }
 
     @GetMapping("/all")
     @Operation(summary = "Retorna uma lista de Eventos", description = "Responsavel por retornar todos os eventos na base de dados",
@@ -47,21 +41,19 @@ public class EventosController {
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
     )
     public ResponseEntity<String> createEvent(@RequestBody EventoDto eventoDto){
-        logger.info("Event recebido, {}", eventoDto);
+        log.info("Event recebido, {}", eventoDto);
         Event event = eventoMapper.eventoDtoToEvento(eventoDto);
         eventService.sendingNewEventToProcessor(event);
         return ResponseEntity.status(HttpStatus.CREATED).body("Added new event to queue");
     }
 
-    @PutMapping("/upload")
-    @Operation(summary = "Enviar Imagem do Folder do Event", description = "Responsavel por receber o envio do arquivo da imagem e salvar no banco o caminho dela",
-            responses = @ApiResponse(responseCode = "201", description = "Recurso atualizado com sucesso",
+    @PostMapping("/upload")
+    @Operation(summary = "Send Image to S3Bucket", description = "Endpoint is responsable to feed S3 buckets with image and return the URI",
+            responses = @ApiResponse(responseCode = "201", description = "Resource created with success",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
     )
-    public ResponseEntity<String> uploadImagem(
-            @RequestParam("imagem") MultipartFile file,
-            @RequestParam("id") Long id){
-        logger.info("Event id recebido, {}", id);
+    public ResponseEntity<String> uploadImage(
+            @RequestParam("image") MultipartFile file){
         var photoPath = eventService.updatePhoto(file);
         return ResponseEntity.ok(photoPath);
     }
