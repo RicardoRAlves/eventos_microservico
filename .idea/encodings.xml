@@ -3,6 +3,6 @@
   <component name="Encoding">
     <file url="file://$PROJECT_DIR$/banco_api/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/evento-api/src/main/java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/notificacao/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/notification-api/src/main/java" charset="UTF-8" />
   </component>
 </project>

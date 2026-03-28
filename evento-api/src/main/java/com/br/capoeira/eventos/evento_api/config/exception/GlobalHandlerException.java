@@ -11,8 +11,14 @@ public class GlobalHandlerException {
 
     @ExceptionHandler(FileException.class)
     public ResponseEntity<StandardException> file(FileException e, HttpServletRequest request) {
+        var err = new StandardException(System.currentTimeMillis(), HttpStatus.BAD_REQUEST.value(), "Error on S3 file", e.getMessage(), request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
+    }
 
-        var err = new StandardException(System.currentTimeMillis(), HttpStatus.BAD_REQUEST.value(), "Erro de arquivo", e.getMessage(), request.getRequestURI());
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<StandardException> validation(FileException e, HttpServletRequest request) {
+
+        var err = new StandardException(System.currentTimeMillis(), HttpStatus.BAD_REQUEST.value(), "Error on trying to validate attributes", e.getMessage(), request.getRequestURI());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
     }
 }

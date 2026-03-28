@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>com.br.capoeira.eventos</groupId>
-	<artifactId>notificacao</artifactId>
+	<artifactId>notification-api</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>notificacao</name>
 	<description>Projeto Responsavel por receber um novo event e avisar o android</description>

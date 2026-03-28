@@ -1,4 +1,14 @@
 services:
+  event-mongo-db:
+    image: mongo:latest
+    container_name: event-mongo-db
+    restart: always
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=123456
+    ports:
+      - 27017:27017
+
   rabbitmq:
     image: rabbitmq:3.10.5-management
     container_name: rabbitmq

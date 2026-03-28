@@ -1,6 +1,6 @@
 package com.br.capoeira.eventos.evento_api.controller;
 
-import com.br.capoeira.eventos.evento_api.dto.EventoDto;
+import com.br.capoeira.eventos.evento_api.dto.EventDto;
 import com.br.capoeira.eventos.evento_api.mapper.EventoMapper;
 import com.br.capoeira.eventos.evento_api.model.Event;
 import com.br.capoeira.eventos.evento_api.service.EventService;
@@ -40,11 +40,11 @@ public class EventController {
             responses = @ApiResponse(responseCode = "201", description = "Recurso criado com sucesso",
                     content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
     )
-    public ResponseEntity<String> createEvent(@RequestBody EventoDto eventoDto){
-        log.info("Event recebido, {}", eventoDto);
-        Event event = eventoMapper.eventoDtoToEvento(eventoDto);
+    public ResponseEntity<Event> createEvent(@RequestBody EventDto eventDto){
+        log.info("Event recebido, {}", eventDto);
+        var event = eventoMapper.eventoDtoToEvento(eventDto);
         eventService.sendingNewEventToProcessor(event);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Added new event to queue");
+        return ResponseEntity.status(HttpStatus.CREATED).body(event);
     }
 
     @PostMapping("/upload")
@@ -56,5 +56,16 @@ public class EventController {
             @RequestParam("image") MultipartFile file){
         var photoPath = eventService.updatePhoto(file);
         return ResponseEntity.ok(photoPath);
+    }
+
+    @PutMapping
+    @Operation(summary = "Send an request to update Event", description = "Endpoint is responsable to update Eventitself",
+            responses = @ApiResponse(responseCode = "200", description = "Resource sent with success",
+                    content = @Content(mediaType = "application/json", schema = @Schema(implementation = String.class)))
+    )
+    public ResponseEntity<Event> updateEvent(@RequestBody Event event){
+        log.info("Event received, {}", event);
+        eventService.updateEvent(event);
+        return ResponseEntity.ok(event);
     }
 }

@@ -1,8 +1,7 @@
-package com.br.capoeira.eventos.banco_api.entities;
+package com.br.capoeira.eventos.evento_api.dto;
 
-import com.br.capoeira.eventos.banco_api.entities.enums.TypeContact;
+import com.br.capoeira.eventos.evento_api.enums.TypeContact;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,13 +11,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "event")
-public class Event {
-
-    @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
-    private Long id;
+public class EventDto {
     private String transactionId;
     private String title;
     private String description;
@@ -27,9 +20,7 @@ public class Event {
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dateFinished;
     private String address;
-    @Enumerated(EnumType.STRING)
     private TypeContact typeContact;
     private String contact;
     private String image;
-    private Boolean active;
 }
