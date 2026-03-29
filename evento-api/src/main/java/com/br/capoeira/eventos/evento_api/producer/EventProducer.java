@@ -38,7 +38,7 @@ public class EventProducer {
 
     public void askingForSendingAllEvents(){
         log.info("asking for sending all events from database");
-        rabbitTemplate.convertAndSend(getAllExchange, "");
+        rabbitTemplate.convertAndSend(getAllExchange, "","");
     }
 
     public void sendingEventUpdatedToProcessor(Event event){

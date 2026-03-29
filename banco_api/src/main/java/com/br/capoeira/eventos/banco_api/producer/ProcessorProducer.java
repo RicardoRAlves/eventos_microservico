@@ -34,7 +34,7 @@ public class ProcessorProducer {
     private final RabbitTemplate rabbitTemplate;
 
     public void sendEventForSuccessQueue(Event event){
-        rabbitTemplate.convertAndSend(createNotificationExchange, "", singletonList(event));
+        rabbitTemplate.convertAndSend(createNotificationExchange, "", event);
         log.info("Event sent to : {} successfuly", createNotificationExchange);
     }
 

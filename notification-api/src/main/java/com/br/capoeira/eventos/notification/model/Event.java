@@ -1,8 +1,7 @@
-package com.br.capoeira.eventos.banco_api.entities;
+package com.br.capoeira.eventos.notification.model;
 
-import com.br.capoeira.eventos.banco_api.entities.enums.TypeContact;
+import com.br.capoeira.eventos.notification.model.enums.TypeContact;
 import com.fasterxml.jackson.annotation.JsonFormat;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,12 +11,8 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Entity
-@Table(name = "event")
 public class Event {
 
-    @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
     private Long id;
     private String transactionId;
     private String title;
@@ -27,27 +22,12 @@ public class Event {
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dateFinished;
     private String address;
-    @Enumerated(EnumType.STRING)
     private TypeContact typeContact;
     private String contact;
     private String image;
     private Boolean active;
-    @Column(nullable = false, updatable = false)
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime createAt;
-    @Column(nullable = false)
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime updatedAt;
-
-    @PrePersist
-    public void prePersist(){
-        var now = LocalDateTime.now();
-        createAt = now;
-        updatedAt = now;
-    }
-
-    @PreUpdate
-    public void preUpdate(){
-        updatedAt = LocalDateTime.now();
-    }
 }
