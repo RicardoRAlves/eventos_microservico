@@ -20,7 +20,13 @@ services:
       - '5672:5672'
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-      - rabbitmq_log:/var/lib/rabbitmq
+      - rabbitmq_log:/var/lib/rabbitmq/log
+    # ADICIONE ESTE BLOCO:
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   postgres:
     image: postgres:15.7
@@ -34,7 +40,33 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    # ADICIONE ESTE BLOCO:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d eventos_api"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  processor_api:
+    build:
+      context: ./processor_api
+      dockerfile: Dockerfile
+    container_name: processor_api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: rabbitmq
+      RABBIT_PASSWORD: rabbitmq
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: eventos_api
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
 volumes:
   rabbitmq_data:
   rabbitmq_log:

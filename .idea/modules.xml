@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Eventos_Microservico.iml" filepath="$PROJECT_DIR$/Eventos_Microservico.iml" />
+      <module fileurl="file://$PROJECT_DIR$/Events_Microservice.iml" filepath="$PROJECT_DIR$/Events_Microservice.iml" />
     </modules>
   </component>
 </project>

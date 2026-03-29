@@ -8,6 +8,8 @@
         <option value="$PROJECT_DIR$/notificacao/pom.xml" />
         <option value="$PROJECT_DIR$/banco_api/pom.xml" />
         <option value="$PROJECT_DIR$/notification-api/pom.xml" />
+        <option value="$PROJECT_DIR$/event-api/pom.xml" />
+        <option value="$PROJECT_DIR$/processor_api/pom.xml" />
       </list>
     </option>
   </component>
