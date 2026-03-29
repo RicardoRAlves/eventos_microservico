@@ -8,6 +8,11 @@ services:
       - MONGO_INITDB_ROOT_PASSWORD=123456
     ports:
       - 27017:27017
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3.10.5-management
@@ -21,7 +26,6 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - rabbitmq_log:/var/lib/rabbitmq/log
-    # ADICIONE ESTE BLOCO:
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
       interval: 10s
@@ -31,21 +35,44 @@ services:
   postgres:
     image: postgres:15.7
     restart: unless-stopped
-    container_name: postgres-15.7
+    container_name: postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: eventos_api
     ports:
-      - '5432:5432'
+      - '5433:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    # ADICIONE ESTE BLOCO:
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d eventos_api"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  event_api:
+    build:
+      context: ./event-api
+      dockerfile: Dockerfile
+    container_name: event_api
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./event-api/variaveis.env
+    depends_on:
+      event-mongo-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: rabbitmq
+      RABBIT_PASSWORD: rabbitmq
+      MONGO_USER: admin
+      MONGO_PASS: 123456
+      MONGO_HOST: event-mongo-db
+      MONGO_DB: admin
 
   processor_api:
     build:
@@ -67,6 +94,21 @@ services:
       DB_NAME: eventos_api
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
+
+  notification_api:
+    build:
+      context: ./notification-api
+      dockerfile: Dockerfile
+    container_name: notification_api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: rabbitmq
+      RABBIT_PASSWORD: rabbitmq
+
 volumes:
   rabbitmq_data:
   rabbitmq_log:
