@@ -18,19 +18,19 @@ public class NotificationService {
     public void createNewEvent(Event event) {
         log.info("Notify android that event : {}, has been created", event);
         firebaseService.addEvent(event);
-        firebaseService.sendEventUpdateNotification(event.getTransactionId(), Actions.CREATED);
+        //firebaseService.sendEventUpdateNotification(event.getTransactionId(), Actions.CREATED);
     }
 
     public void getAllEvents(List<Event> event) {
         log.info("Notify android that it has been updated all events : {}", event);
         firebaseService.addMultipleEventsBatch(event);
-        firebaseService.sendEventUpdateNotification(null, Actions.GETALL);
+        //firebaseService.sendEventUpdateNotification(null, Actions.GETALL);
     }
 
     public void updateEvent(Event event) {
         log.info("Notify android that event : {} has been updated", event);
         firebaseService.updateEvent(event);
-        firebaseService.sendEventUpdateNotification(event.getTransactionId(), Actions.UPDATED);
+        //firebaseService.sendEventUpdateNotification(event.getTransactionId(), Actions.UPDATED);
     }
 
     public void createErrorEvent(Event event) {
