@@ -36,8 +36,12 @@ public class EventService {
             repository.save(event);
             producer.sendingNewEventToProcessor(event);
         } catch (Exception e) {
-            log.error("Error while trying to sending event {} to database api {} ", event, e.getMessage());
-            throw new RuntimeException("Error while trying to sending event to database api");
+            var error = "Error while trying to sending event "
+                    .concat(event.toString())
+                    .concat("to database api ")
+                            .concat(e.getMessage());
+            log.error(error);
+            throw new RuntimeException(error);
         }
     }
 
@@ -81,7 +85,7 @@ public class EventService {
         if (isEmpty(event.getDateFinished())){
             throw new ValidationException("Date of finish of the Event must be informed");
         }
-        if (event.getDateFinished().isBefore(event.getDateStarted())){
+        if (!event.getDateFinished().isAfter(event.getDateStarted())){
             throw new ValidationException("Date of finish must be after the date of started");
         }
         if (isEmpty(event.getAddress())){
