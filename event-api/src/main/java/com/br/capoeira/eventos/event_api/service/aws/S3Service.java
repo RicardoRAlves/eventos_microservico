@@ -64,12 +64,16 @@ public class S3Service {
     }
 
     public void deleteImage(String fileName){
-        String nomeFile = fileName.substring(fileName.indexOf(".com/") + 5);
-        var deleteRequest = DeleteObjectRequest.builder()
-                .bucket(bucketName)
-                .key(fileName)
-                .build();
+        try {
+            var key = URI.create(fileName).getPath().substring(1);
+            var deleteRequest = DeleteObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(key)
+                    .build();
 
-        s3Client.deleteObject(deleteRequest);
+            s3Client.deleteObject(deleteRequest);
+        } catch (IllegalArgumentException e) {
+            throw new FileException("Invalid URI, please check it: " + fileName);
+        }
     }
 }
