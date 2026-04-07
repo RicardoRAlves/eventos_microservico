@@ -45,7 +45,6 @@ public class ProcessorService {
                 event = eventoRepository.save(event);
                 producer.sendEventForUpdateQueue(event);
             } else {
-                producer.sendEventForUpdateErrorQueue(event);
                 throw new RuntimeException("An error happened \n Event not found: ".concat(event.getTransactionId()));
             }
 

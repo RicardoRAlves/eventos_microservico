@@ -1,6 +1,6 @@
-package com.br.capoeira.eventos.event_api.consumer;
+package com.br.capoeira.eventos.processor_api.consumer;
 
-import com.br.capoeira.eventos.event_api.service.EventService;
+import com.br.capoeira.eventos.processor_api.service.ProcessorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
@@ -18,16 +18,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThatNoException;
 import static org.awaitility.Awaitility.await;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
-import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEvent;
 
-@SpringBootTest
+@SpringBootTest(properties = {
+        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
+})
 @Testcontainers
-public class EventErrorListenerIntegrationTest {
+public class ProcessorEventListenerIntegrationTest {
 
     @Container
     static RabbitMQContainer rabbitMQ =
@@ -39,9 +39,6 @@ public class EventErrorListenerIntegrationTest {
         registry.add("spring.rabbitmq.port", rabbitMQ::getAmqpPort);
     }
 
-    @Value("${rabbitmq.create.error.queue.name}")
-    private String errorQueueName;
-
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
@@ -49,44 +46,63 @@ public class EventErrorListenerIntegrationTest {
     private RabbitAdmin rabbitAdmin;
 
     @MockitoBean
-    private EventService eventService;
+    private ProcessorService service;
+
+    @Value("${rabbitmq.create.queue.name}")
+    private String createQueueName;
+
+    @Value("${rabbitmq.get-all.queue.name}")
+    private String getAllQueueName;
+
+    @Value("${rabbitmq.update.queue.name}")
+    private String updateQueueName;
 
     @BeforeEach
     void setUp() {
-        // declara a fila que o @RabbitListener está escutando
-        var queue = new Queue(errorQueueName, true);
-        rabbitAdmin.declareQueue(queue);
     }
 
     @Test
-    void errorCreateEvent_shouldCallSendingCreateErrorToNotification() throws InterruptedException {
+    public void shouldCreateNewEvent() {
+        var createQueue = new Queue(createQueueName, true);
+        rabbitAdmin.declareQueue(createQueue);
         var event = getMockEvent();
         event.setTransactionId("1xkdi2393cd");
+        rabbitTemplate.convertAndSend(createQueueName, event);
 
-        // envia a mensagem para a fila que o listener está escutando
-        rabbitTemplate.convertAndSend(errorQueueName, event);
-
-        // aguarda o listener processar — ele é assíncrono
         await().atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->
-                        verify(eventService).sendingCreateErrorToNotification(
+                        verify(service).createNewEvent(
                                 argThat(e -> e.getTransactionId().equals("1xkdi2393cd"))
                         )
                 );
     }
 
     @Test
-    void errorCreateEvent_shouldLogAndNotThrow_whenEventHasNoTransactionId() {
-        var event = getMockEvent();
-        event.setTransactionId(null);
+    public void shouldGetAllEvents() {
+        var getAllQueue = new Queue(getAllQueueName, true);
+        rabbitAdmin.declareQueue(getAllQueue);
 
-        assertThatNoException().isThrownBy(() ->
-                rabbitTemplate.convertAndSend(errorQueueName, event)
-        );
+        rabbitTemplate.convertAndSend(getAllQueueName, "");
 
         await().atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->
-                        verify(eventService).sendingCreateErrorToNotification(any())
+                        verify(service).findAll()
+                );
+    }
+
+    @Test
+    public void shouldUpdateEvent() {
+        var updateQueue = new Queue(updateQueueName, true);
+        rabbitAdmin.declareQueue(updateQueue);
+        var event = getMockEvent();
+        event.setId(123L);
+        rabbitTemplate.convertAndSend(updateQueueName, event);
+
+        await().atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() ->
+                        verify(service).updateEvent(
+                                argThat(e -> e.getId().equals(123L))
+                        )
                 );
     }
 }
