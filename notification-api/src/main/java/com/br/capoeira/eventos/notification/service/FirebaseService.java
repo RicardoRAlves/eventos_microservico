@@ -2,6 +2,7 @@ package com.br.capoeira.eventos.notification.service;
 
 import com.br.capoeira.eventos.notification.model.Event;
 import com.br.capoeira.eventos.notification.model.enums.Actions;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
 import com.google.firebase.messaging.FirebaseMessaging;
@@ -11,95 +12,107 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
-
-import static org.springframework.util.ObjectUtils.isEmpty;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class FirebaseService {
 
-    private final Firestore firestore;
-    private final FirebaseMessaging firebaseMessaging;
     private static final String COLLECTION_NAME = "events";
     private static final String TOPIC = "event_updates";
+
     private static final String KEY_ACTION = "action";
-    private static final String EVENT_TRANSACTION_ID = "eventTransactionId";
+    private static final String KEY_EVENT = "body";
+
+    private final Firestore firestore;
+    private final FirebaseMessaging firebaseMessaging;
+    private final ObjectMapper objectMapper;
 
     public void addEvent(Event event) {
-        try {
-            String transactionId = event.getTransactionId();
-            ApiFuture<WriteResult> future = firestore.collection(COLLECTION_NAME).document(transactionId).set(event, SetOptions.merge());
-            var firebaseEvent = future.get();
-            log.info("Event added on firebase: {}", firebaseEvent.toString());
-        } catch (Exception e) {
-            log.error("Event not added to Firebase {}", e.getMessage());
-            throw new RuntimeException(e);
-        }
+        persistEvent(event, "added");
+    }
+
+    public void updateEvent(Event event) {
+        persistEvent(event, "updated");
     }
 
     public void addMultipleEventsBatch(List<Event> events) {
         try {
             WriteBatch batch = firestore.batch();
-            List<String> usedIds = new ArrayList<>();
 
             for (Event event : events) {
-                String transactionId = event.getTransactionId();
-                DocumentReference docRef = firestore.collection(COLLECTION_NAME).document(transactionId);
+                DocumentReference docRef = getDocumentReference(event.getTransactionId());
                 batch.set(docRef, event, SetOptions.merge());
-                usedIds.add(transactionId);
 
-                log.info("Event transaction ID '{}' add to the set with merge.", transactionId);
+                log.info("Event '{}' added to batch.", event.getTransactionId());
             }
 
             ApiFuture<List<WriteResult>> future = batch.commit();
             List<WriteResult> results = future.get();
 
-            log.info("Set of {} events commited. Total of operations: {}", results.size(), usedIds.size());
+            log.info("Batch committed successfully. Total operations: {}", results.size());
 
         } catch (Exception e) {
-            log.error("Events Get ALL not added to Firebase {}", e.getMessage());
-            throw new RuntimeException(e);
+            log.error("Error adding events batch to Firebase: {}", e.getMessage(), e);
+            throw new RuntimeException("Error adding events batch", e);
         }
     }
 
-    public void updateEvent(Event event) {
+    private void persistEvent(Event event, String operation) {
         try {
-            var transactionId = event.getTransactionId();
-            ApiFuture<WriteResult> future = firestore.collection(COLLECTION_NAME)
-                    .document(transactionId)
+            ApiFuture<WriteResult> future = getDocumentReference(event.getTransactionId())
                     .set(event, SetOptions.merge());
+
             WriteResult result = future.get();
-            log.info("Event {} updated on Firestore (with merge) in: {}", transactionId, result.getUpdateTime());
+
+            log.info("Event {} {} on Firestore at {}", event.getTransactionId(), operation, result.getUpdateTime());
+
         } catch (Exception e) {
-            log.error("Event not updated to Firebase {}", e.getMessage());
-            throw new RuntimeException(e);
+            log.error("Error {} event on Firebase: {}", operation, e.getMessage(), e);
+            throw new RuntimeException("Error trying to " + operation + " event", e);
         }
     }
 
-    public void sendEventUpdateNotification(String transactionId, Actions action) {
+    private DocumentReference getDocumentReference(String transactionId) {
+        return firestore.collection(COLLECTION_NAME).document(transactionId);
+    }
+
+    public void sendEventNotification(Event event, Actions action) {
+        sendNotification(event, action);
+    }
+
+    public void sendEventsNotification(List<Event> events, Actions action) {
+        sendNotification(events, action);
+    }
+
+    private void sendNotification(Object payload, Actions action) {
         try {
-            Message message = getMessage(transactionId, action);
+            Message message = buildMessage(FirebaseService.KEY_EVENT, payload, action);
 
             String response = firebaseMessaging.send(message);
-            log.info("Message send on topic {} with success : {} ", TOPIC, response);
+
+            log.info("Message sent to topic {} with action {}: {}", TOPIC, action, response);
+
         } catch (FirebaseMessagingException e) {
-            log.error("Message send on topic {} could not be sent : {} ", TOPIC, e.getMessage());
-            throw new RuntimeException(e);
+            log.error("Error sending message to topic {}: {}", TOPIC, e.getMessage(), e);
+            throw new RuntimeException("Error sending Firebase notification", e);
         }
     }
 
-    private static Message getMessage(String transactionId, Actions action) {
-        var builder = Message.builder();
-        builder.putData(KEY_ACTION, action.name());
-        if (!isEmpty(transactionId)) {
-            builder.putData(EVENT_TRANSACTION_ID, transactionId);
-        }
-        return builder
+    private Message buildMessage(String payloadKey, Object payload, Actions action) {
+        return Message.builder()
+                .putData(KEY_ACTION, action.name())
+                .putData(payloadKey, toJson(payload))
                 .setTopic(TOPIC)
                 .build();
     }
 
+    private String toJson(Object payload) {
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (Exception e) {
+            throw new RuntimeException("Error serializing payload to JSON", e);
+        }
+    }
 }

@@ -59,14 +59,12 @@ public class EventErrorListenerIntegrationTest {
     }
 
     @Test
-    void errorCreateEvent_shouldCallSendingCreateErrorToNotification() throws InterruptedException {
+    void errorCreateEvent_shouldCallSendingCreateErrorToNotification() {
         var event = getMockEvent();
         event.setTransactionId("1xkdi2393cd");
 
-        // envia a mensagem para a fila que o listener está escutando
         rabbitTemplate.convertAndSend(errorQueueName, event);
 
-        // aguarda o listener processar — ele é assíncrono
         await().atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->
                         verify(eventService).sendingCreateErrorToNotification(
