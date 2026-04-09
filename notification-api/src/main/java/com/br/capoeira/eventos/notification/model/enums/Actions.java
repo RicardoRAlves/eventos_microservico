@@ -1,9 +1,9 @@
 package com.br.capoeira.eventos.notification.model.enums;
 
 public enum Actions {
-    CREATED,
-    UPDATED,
-    GETALL,
+    CREATE,
+    UPDATE,
+    GET_ALL,
     ERROR_CREATE,
     ERROR_UPDATE
 }
