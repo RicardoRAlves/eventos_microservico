@@ -15,6 +15,7 @@ public class MockUtils {
         event.setTypeContact(TypeContact.INSTAGRAM);
         event.setDateStarted(LocalDateTime.now().minusDays(1));
         event.setDateFinished(LocalDateTime.now());
+        event.setLocationName("Cultural Center");
         event.setAddress("Event Street");
         event.setImage("https://my-bucket.s3.amazonaws.com/photo.jpg");
         event.setActive(true);

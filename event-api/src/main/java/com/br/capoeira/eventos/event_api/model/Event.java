@@ -25,10 +25,10 @@ public class Event {
     private LocalDateTime dateStarted;
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dateFinished;
+    private String locationName;
     private String address;
     private TypeContact typeContact;
     private String contact;
     private String image;
     private Boolean active;
-
 }

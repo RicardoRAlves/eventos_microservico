@@ -26,6 +26,7 @@ public class Event {
     private LocalDateTime dateStarted;
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dateFinished;
+    private String locationName;
     private String address;
     @Enumerated(EnumType.STRING)
     private TypeContact typeContact;
