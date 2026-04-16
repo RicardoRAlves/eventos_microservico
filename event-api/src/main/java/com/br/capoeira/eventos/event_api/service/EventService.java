@@ -88,6 +88,9 @@ public class EventService {
         if (!event.getDateFinished().isAfter(event.getDateStarted())){
             throw new ValidationException("Date of finish must be after the date of started");
         }
+        if (isEmpty(event.getLocationName())){
+            throw new ValidationException("Location name must be informed");
+        }
         if (isEmpty(event.getAddress())){
             throw new ValidationException("Address must be informed");
         }

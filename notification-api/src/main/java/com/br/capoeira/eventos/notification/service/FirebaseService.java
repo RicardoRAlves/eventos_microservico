@@ -1,5 +1,6 @@
 package com.br.capoeira.eventos.notification.service;
 
+import com.br.capoeira.eventos.notification.mapper.EventMapper;
 import com.br.capoeira.eventos.notification.model.Event;
 import com.br.capoeira.eventos.notification.model.enums.Actions;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,10 +43,11 @@ public class FirebaseService {
             WriteBatch batch = firestore.batch();
 
             for (Event event : events) {
-                DocumentReference docRef = getDocumentReference(event.getTransactionId());
-                batch.set(docRef, event, SetOptions.merge());
+                var document = EventMapper.toDocument(event);
+                DocumentReference docRef = getDocumentReference(document.getTransactionId());
+                batch.set(docRef, document, SetOptions.merge());
 
-                log.info("Event '{}' added to batch.", event.getTransactionId());
+                log.info("Event '{}' added to batch.", document.getTransactionId());
             }
 
             ApiFuture<List<WriteResult>> future = batch.commit();
@@ -61,8 +63,10 @@ public class FirebaseService {
 
     private void persistEvent(Event event, String operation) {
         try {
+            var document = EventMapper.toDocument(event);
+
             ApiFuture<WriteResult> future = getDocumentReference(event.getTransactionId())
-                    .set(event, SetOptions.merge());
+                    .set(document, SetOptions.merge());
 
             WriteResult result = future.get();
 

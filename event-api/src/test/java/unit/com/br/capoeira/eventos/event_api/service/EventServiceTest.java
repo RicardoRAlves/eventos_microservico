@@ -176,6 +176,18 @@ public class EventServiceTest {
     }
 
     @Test
+    public void whenLocationEmptyShouldNotSaveNewEvent() {
+        var event = getMockEvent();
+        event.setLocationName(null);
+
+        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("Location name must be informed");
+        verifyNoInteractions(repository);
+        verifyNoInteractions(producer);
+    }
+
+    @Test
     public void whenAddressEmptyShouldNotSaveNewEvent() {
         var event = getMockEvent();
         event.setAddress(null);
