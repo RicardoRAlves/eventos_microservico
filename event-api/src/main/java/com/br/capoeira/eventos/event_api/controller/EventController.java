@@ -17,7 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/evento")
+@RequestMapping("/api/v2/evento")
 public class EventController {
     private final EventoMapper eventoMapper;
     private final EventService eventService;
@@ -30,7 +30,7 @@ public class EventController {
 
     @PostMapping("/create")
     public ResponseEntity<Event> createEvent(@RequestBody EventDto eventDto){
-        log.info("Event recebido, {}", eventDto);
+        log.info("New Event created, {}", eventDto);
         var event = eventoMapper.eventoDtoToEvento(eventDto);
         eventService.sendingNewEventToProcessor(event);
         return ResponseEntity.status(HttpStatus.CREATED).body(event);
@@ -47,7 +47,7 @@ public class EventController {
 
     @PutMapping
     public ResponseEntity<Event> updateEvent(@RequestBody Event event){
-        log.info("Event received, {}", event);
+        log.info("Event updated, {}", event);
         eventService.updateEvent(event);
         return ResponseEntity.ok(event);
     }
