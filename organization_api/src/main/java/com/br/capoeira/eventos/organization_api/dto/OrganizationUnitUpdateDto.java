@@ -3,16 +3,15 @@ package com.br.capoeira.eventos.organization_api.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class OrganizationUnitDto {
-    @NotNull(message = "Organization id must be informed")
-    private Long organizationId;
+@AllArgsConstructor
+public class OrganizationUnitUpdateDto {
+    @NotNull(message = "Unit id must be informed")
+    private Long id;
 
     @NotBlank(message = "Unit name must be informed")
     private String name;

@@ -1,11 +1,8 @@
 package com.br.capoeira.eventos.organization_api.controller;
 
-import com.br.capoeira.eventos.organization_api.dto.OrganizationDto;
-import com.br.capoeira.eventos.organization_api.dto.OrganizationUnitDto;
-import com.br.capoeira.eventos.organization_api.dto.OrganizationUnitResponseDto;
-import com.br.capoeira.eventos.organization_api.model.Organization;
-import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
+import com.br.capoeira.eventos.organization_api.dto.*;
 import com.br.capoeira.eventos.organization_api.service.OrganizationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -23,16 +20,10 @@ public class OrganizationController {
     private final OrganizationService service;
 
     @GetMapping("/{id}")
-    public ResponseEntity<Organization> findOrganizationById(@PathVariable("id") Long id) {
-        var optOrganization = service.findById(id);
-
-        if (optOrganization.isPresent()) {
-            log.info("Finding Organization by id {}", optOrganization.get());
-            return ResponseEntity.ok(optOrganization.get());
-        } else {
-            log.info("Organization not found for id {}", id);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new Organization());
-        }
+    public ResponseEntity<OrganizationResponseDto> findOrganizationById(@PathVariable("id") Long id) {
+        log.info("Finding Organization by id {}", id);
+        var response = service.findOrganizationById(id);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/unit/{id}")
@@ -45,34 +36,51 @@ public class OrganizationController {
     @GetMapping("/unit/all/{organizationId}")
     public ResponseEntity<List<OrganizationUnitResponseDto>> findAllOrganizationUnitByOrganizationId(
             @PathVariable("organizationId") Long organizationId) {
-        var organizationUnits = service.findAllByOrganizationId(organizationId);
-        return ResponseEntity.ok(organizationUnits);
+        log.info("Finding all Organization Units by organization id {}", organizationId);
+        var response = service.findAllByOrganizationId(organizationId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/unit/code/{code}")
+    public ResponseEntity<OrganizationUnitResponseDto> findUnitByJoinCode(
+            @PathVariable String code) {
+
+        log.info("Finding Organization Unit by joinCode {}", code);
+
+        var response = service.findByJoinCode(code);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
-    public ResponseEntity<Organization> createOrganization(@RequestBody OrganizationDto dto) {
-        log.info("New Organization created, {}", dto);
-        var organization = service.create(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(organization);
+    public ResponseEntity<OrganizationResponseDto> createOrganization(
+            @Valid @RequestBody OrganizationCreateRequestDto dto) {
+        log.info("Creating organization with main unit {}", dto);
+        var response = service.createWithMainUnit(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PostMapping("/unit")
-    public ResponseEntity<OrganizationUnitResponseDto> createOrganization(@RequestBody OrganizationUnitDto dto) {
-        log.info("New OrganizationUnit created, {}", dto);
+    public ResponseEntity<OrganizationUnitResponseDto> createOrganizationUnit(
+            @Valid @RequestBody OrganizationUnitDto dto) {
+        log.info("Creating organization unit {}", dto);
         var response = service.create(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping
-    public ResponseEntity<Organization> updateOrganization(@RequestBody Organization organization) {
-        log.info("Organization updated, {}", organization);
-        return ResponseEntity.status(HttpStatus.CREATED).body(service.update(organization));
+    public ResponseEntity<OrganizationResponseDto> updateOrganization(
+            @Valid @RequestBody OrganizationUpdateDto dto) {
+        log.info("Updating organization {}", dto);
+        var response = service.update(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @PutMapping("/unit")
-    public ResponseEntity<OrganizationUnitResponseDto> updateOrganization(@RequestBody OrganizationUnit organizationUnit) {
-        log.info("OrganizationUnit updated, {}", organizationUnit);
-        var response = service.update(organizationUnit);
+    public ResponseEntity<OrganizationUnitResponseDto> updateOrganizationUnit(
+            @Valid @RequestBody OrganizationUnitUpdateDto dto) {
+        log.info("Updating organization unit {}", dto);
+        var response = service.update(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

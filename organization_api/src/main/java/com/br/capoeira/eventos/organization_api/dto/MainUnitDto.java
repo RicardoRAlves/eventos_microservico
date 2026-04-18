@@ -4,15 +4,15 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@AllArgsConstructor
+@Builder
 @NoArgsConstructor
-public class OrganizationUnitDto {
-    @NotNull(message = "Organization id must be informed")
-    private Long organizationId;
+@AllArgsConstructor
+public class MainUnitDto {
 
     @NotBlank(message = "Unit name must be informed")
     private String name;

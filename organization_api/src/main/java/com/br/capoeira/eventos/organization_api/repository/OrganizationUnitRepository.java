@@ -8,9 +8,13 @@ import java.util.Optional;
 
 public interface OrganizationUnitRepository extends JpaRepository<OrganizationUnit, Long> {
 
-    List<OrganizationUnit> findAllByOrganization_Id(Long organizationId);
+    List<OrganizationUnit> findAllByOrganization_IdOrderByIdAsc(Long organizationId);
 
     boolean existsByOrganization_IdAndSlug(Long organizationId, String slug);
 
     Optional<OrganizationUnit> findByOrganization_IdAndSlug(Long organizationId, String slug);
+
+    boolean existsByJoinCode(String joinCode);
+
+    Optional<OrganizationUnit> findByJoinCode(String joinCode);
 }

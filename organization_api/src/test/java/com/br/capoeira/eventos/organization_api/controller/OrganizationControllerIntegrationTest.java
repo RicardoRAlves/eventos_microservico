@@ -1,11 +1,11 @@
 package com.br.capoeira.eventos.organization_api.controller;
 
-import com.br.capoeira.eventos.organization_api.dto.OrganizationDto;
+import com.br.capoeira.eventos.organization_api.dto.OrganizationCreateRequestDto;
 import com.br.capoeira.eventos.organization_api.dto.OrganizationUnitDto;
+import com.br.capoeira.eventos.organization_api.dto.OrganizationUnitUpdateDto;
+import com.br.capoeira.eventos.organization_api.dto.OrganizationUpdateDto;
 import com.br.capoeira.eventos.organization_api.exception.GlobalHandlerException;
 import com.br.capoeira.eventos.organization_api.exception.ValidationException;
-import com.br.capoeira.eventos.organization_api.model.Organization;
-import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
 import com.br.capoeira.eventos.organization_api.service.OrganizationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -18,7 +18,6 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -44,32 +43,37 @@ public class OrganizationControllerIntegrationTest {
 
     @Test
     void shouldFindOrganizationById() throws Exception {
-        var organization = getMockOrganization();
+        var responseDto = getMockOrganizationResponseDto();
 
-        when(service.findById(1L)).thenReturn(Optional.of(organization));
+        when(service.findOrganizationById(1L)).thenReturn(responseDto);
 
         mockMvc.perform(get("/api/v2/organizacao/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(organization.getId()))
-                .andExpect(jsonPath("$.name").value(organization.getName()))
-                .andExpect(jsonPath("$.slug").value(organization.getSlug()))
-                .andExpect(jsonPath("$.description").value(organization.getDescription()))
-                .andExpect(jsonPath("$.logoUrl").value(organization.getLogoUrl()))
-                .andExpect(jsonPath("$.active").value(organization.getActive()));
+                .andExpect(jsonPath("$.id").value(responseDto.getId()))
+                .andExpect(jsonPath("$.name").value(responseDto.getName()))
+                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
+                .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
+                .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
+                .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
-        verify(service).findById(1L);
+        verify(service).findOrganizationById(1L);
     }
 
     @Test
     void shouldReturnNotFoundWhenOrganizationByIdDoesNotExist() throws Exception {
-        when(service.findById(1L)).thenReturn(Optional.empty());
+        when(service.findOrganizationById(1L))
+                .thenThrow(new ValidationException("Organization not found"));
 
         mockMvc.perform(get("/api/v2/organizacao/1")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound());
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("Organization not found"))
+                .andExpect(jsonPath("$.path").value("/api/v2/organizacao/1"));
 
-        verify(service).findById(1L);
+        verify(service).findOrganizationById(1L);
     }
 
     @Test
@@ -140,36 +144,35 @@ public class OrganizationControllerIntegrationTest {
 
     @Test
     void shouldCreateOrganization() throws Exception {
-        var dto = getMockOrganizationDto();
-        var organization = getMockOrganization();
+        var requestDto = getMockOrganizationCreateRequestDto();
+        var responseDto = getMockOrganizationResponseDto();
 
-        when(service.create(any(OrganizationDto.class))).thenReturn(organization);
+        when(service.createWithMainUnit(any(OrganizationCreateRequestDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/v2/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(organization.getId()))
-                .andExpect(jsonPath("$.name").value(organization.getName()))
-                .andExpect(jsonPath("$.slug").value(organization.getSlug()))
-                .andExpect(jsonPath("$.description").value(organization.getDescription()))
-                .andExpect(jsonPath("$.logoUrl").value(organization.getLogoUrl()))
-                .andExpect(jsonPath("$.active").value(organization.getActive()));
+                .andExpect(jsonPath("$.id").value(responseDto.getId()))
+                .andExpect(jsonPath("$.name").value(responseDto.getName()))
+                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
+                .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
+                .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
+                .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
-        verify(service).create(any(OrganizationDto.class));
+        verify(service).createWithMainUnit(any(OrganizationCreateRequestDto.class));
     }
 
     @Test
     void shouldCreateOrganizationUnit() throws Exception {
-        var dto = getMockOrganizationUnitDto();
-        var organizationUnit = getMockOrganizationUnit();
+        var requestDto = getMockOrganizationUnitDto();
         var responseDto = getMockOrganizationUnitResponseDto();
 
         when(service.create(any(OrganizationUnitDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(post("/api/v2/organizacao/unit")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
+                        .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.organizationId").value(responseDto.getOrganizationId()))
@@ -190,17 +193,22 @@ public class OrganizationControllerIntegrationTest {
     @Test
     void shouldUpdateOrganization() throws Exception {
         var organization = getMockOrganization();
+        var responseDto = getMockOrganizationResponseDto();
 
-        when(service.update(any(Organization.class))).thenReturn(organization);
+        when(service.update(any(OrganizationUpdateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(put("/api/v2/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(organization)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(organization.getId()))
-                .andExpect(jsonPath("$.name").value(organization.getName()));
+                .andExpect(jsonPath("$.id").value(responseDto.getId()))
+                .andExpect(jsonPath("$.name").value(responseDto.getName()))
+                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
+                .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
+                .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
+                .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
-        verify(service).update(any(Organization.class));
+        verify(service).update(any(OrganizationUpdateDto.class));
     }
 
     @Test
@@ -208,7 +216,7 @@ public class OrganizationControllerIntegrationTest {
         var organizationUnit = getMockOrganizationUnit();
         var responseDto = getMockOrganizationUnitResponseDto();
 
-        when(service.update(any(OrganizationUnit.class))).thenReturn(responseDto);
+        when(service.update(any(OrganizationUnitUpdateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(put("/api/v2/organizacao/unit")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -227,6 +235,6 @@ public class OrganizationControllerIntegrationTest {
                 .andExpect(jsonPath("$.contactEmail").value(responseDto.getContactEmail()))
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
-        verify(service).update(any(OrganizationUnit.class));
+        verify(service).update(any(OrganizationUnitUpdateDto.class));
     }
 }

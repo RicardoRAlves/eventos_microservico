@@ -94,7 +94,7 @@ public class OrganizationUnitRepositoryIntegrationTest {
         organizationUnitRepository.save(unit1);
         organizationUnitRepository.save(unit2);
 
-        var result = organizationUnitRepository.findAllByOrganization_Id(savedOrganization.getId());
+        var result = organizationUnitRepository.findAllByOrganization_IdOrderByIdAsc(savedOrganization.getId());
 
         assertThat(result).hasSize(2);
         assertThat(result)

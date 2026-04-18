@@ -3,8 +3,12 @@ package com.br.capoeira.eventos.organization_api.exception;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.stream.Collectors;
 
 @RestControllerAdvice
 public class GlobalHandlerException {
@@ -26,5 +30,28 @@ public class GlobalHandlerException {
         );
 
         return ResponseEntity.status(status).body(err);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<StandardException> methodArgumentNotValid(
+            MethodArgumentNotValidException e,
+            HttpServletRequest request) {
+
+        String message = e.getBindingResult()
+                .getFieldErrors()
+                .stream()
+                .map(FieldError::getDefaultMessage)
+                .distinct()
+                .collect(Collectors.joining(", "));
+
+        var err = new StandardException(
+                System.currentTimeMillis(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Error on trying to validate attributes",
+                message,
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(err);
     }
 }
