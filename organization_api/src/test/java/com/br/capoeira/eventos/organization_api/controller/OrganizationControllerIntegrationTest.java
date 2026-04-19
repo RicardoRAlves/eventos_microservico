@@ -1,11 +1,11 @@
 package com.br.capoeira.eventos.organization_api.controller;
 
+import com.br.capoeira.eventos.organization_api.config.SecurityConfig;
+import com.br.capoeira.eventos.organization_api.config.exception.GlobalHandlerException;
 import com.br.capoeira.eventos.organization_api.dto.OrganizationCreateRequestDto;
 import com.br.capoeira.eventos.organization_api.dto.OrganizationUnitDto;
 import com.br.capoeira.eventos.organization_api.dto.OrganizationUnitUpdateDto;
 import com.br.capoeira.eventos.organization_api.dto.OrganizationUpdateDto;
-import com.br.capoeira.eventos.organization_api.exception.GlobalHandlerException;
-import com.br.capoeira.eventos.organization_api.exception.ValidationException;
 import com.br.capoeira.eventos.organization_api.service.OrganizationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -14,23 +14,24 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static utils.MockUtils.*;
 
 @WebMvcTest(OrganizationController.class)
-@AutoConfigureMockMvc(addFilters = false)
-@Import(GlobalHandlerException.class)
-public class OrganizationControllerIntegrationTest {
+@AutoConfigureMockMvc
+@Import({GlobalHandlerException.class, SecurityConfig.class})
+class OrganizationControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -41,7 +42,11 @@ public class OrganizationControllerIntegrationTest {
     @MockitoBean
     private OrganizationService service;
 
+    @MockitoBean
+    private JwtDecoder jwtDecoder;
+
     @Test
+    @WithMockUser
     void shouldFindOrganizationById() throws Exception {
         var responseDto = getMockOrganizationResponseDto();
 
@@ -61,22 +66,16 @@ public class OrganizationControllerIntegrationTest {
     }
 
     @Test
-    void shouldReturnNotFoundWhenOrganizationByIdDoesNotExist() throws Exception {
-        when(service.findOrganizationById(1L))
-                .thenThrow(new ValidationException("Organization not found"));
-
+    void shouldReturnUnauthorizedWhenFindOrganizationByIdWithoutAuthentication() throws Exception {
         mockMvc.perform(get("/api/v2/organizacao/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.message").value("Organization not found"))
-                .andExpect(jsonPath("$.path").value("/api/v2/organizacao/1"));
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
 
-        verify(service).findOrganizationById(1L);
+        verify(service, never()).findOrganizationById(anyLong());
     }
 
     @Test
+    @WithMockUser
     void shouldFindOrganizationUnitById() throws Exception {
         var responseDto = getMockOrganizationUnitResponseDto();
 
@@ -102,22 +101,7 @@ public class OrganizationControllerIntegrationTest {
     }
 
     @Test
-    void shouldReturnNotFoundWhenOrganizationUnitByIdDoesNotExist() throws Exception {
-        when(service.findUnitById(1L))
-                .thenThrow(new ValidationException("Organization Unit not found"));
-
-        mockMvc.perform(get("/api/v2/organizacao/unit/1")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.message").value("Organization Unit not found"))
-                .andExpect(jsonPath("$.path").value("/api/v2/organizacao/unit/1"));
-
-        verify(service).findUnitById(1L);
-    }
-
-    @Test
+    @WithMockUser(roles = "ADMIN")
     void shouldFindAllOrganizationUnitsByOrganizationId() throws Exception {
         var responseDto = getMockOrganizationUnitResponseDto();
 
@@ -143,6 +127,17 @@ public class OrganizationControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "CLIENT")
+    void shouldReturnForbiddenWhenFindAllOrganizationUnitsByOrganizationIdWithClientRole() throws Exception {
+        mockMvc.perform(get("/api/v2/organizacao/unit/all/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden());
+
+        verify(service, never()).findAllByOrganizationId(anyLong());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void shouldCreateOrganization() throws Exception {
         var requestDto = getMockOrganizationCreateRequestDto();
         var responseDto = getMockOrganizationResponseDto();
@@ -164,6 +159,20 @@ public class OrganizationControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "CLIENT")
+    void shouldReturnForbiddenWhenCreateOrganizationWithClientRole() throws Exception {
+        var requestDto = getMockOrganizationCreateRequestDto();
+
+        mockMvc.perform(post("/api/v2/organizacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+
+        verify(service, never()).createWithMainUnit(any(OrganizationCreateRequestDto.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void shouldCreateOrganizationUnit() throws Exception {
         var requestDto = getMockOrganizationUnitDto();
         var responseDto = getMockOrganizationUnitResponseDto();
@@ -191,16 +200,30 @@ public class OrganizationControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "CLIENT")
+    void shouldReturnForbiddenWhenCreateOrganizationUnitWithClientRole() throws Exception {
+        var requestDto = getMockOrganizationUnitDto();
+
+        mockMvc.perform(post("/api/v2/organizacao/unit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+
+        verify(service, never()).create(any(OrganizationUnitDto.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void shouldUpdateOrganization() throws Exception {
-        var organization = getMockOrganization();
+        var requestDto = getMockOrganizationUpdateDto();
         var responseDto = getMockOrganizationResponseDto();
 
         when(service.update(any(OrganizationUpdateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(put("/api/v2/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(organization)))
-                .andExpect(status().isCreated())
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
                 .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
@@ -212,16 +235,30 @@ public class OrganizationControllerIntegrationTest {
     }
 
     @Test
+    @WithMockUser(roles = "CLIENT")
+    void shouldReturnForbiddenWhenUpdateOrganizationWithClientRole() throws Exception {
+        var requestDto = getMockOrganizationUpdateDto();
+
+        mockMvc.perform(put("/api/v2/organizacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+
+        verify(service, never()).update(any(OrganizationUpdateDto.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
     void shouldUpdateOrganizationUnit() throws Exception {
-        var organizationUnit = getMockOrganizationUnit();
+        var requestDto = getMockOrganizationUnitUpdateDto();
         var responseDto = getMockOrganizationUnitResponseDto();
 
         when(service.update(any(OrganizationUnitUpdateDto.class))).thenReturn(responseDto);
 
         mockMvc.perform(put("/api/v2/organizacao/unit")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(organizationUnit)))
-                .andExpect(status().isCreated())
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.organizationId").value(responseDto.getOrganizationId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
@@ -236,5 +273,18 @@ public class OrganizationControllerIntegrationTest {
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
         verify(service).update(any(OrganizationUnitUpdateDto.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "CLIENT")
+    void shouldReturnForbiddenWhenUpdateOrganizationUnitWithClientRole() throws Exception {
+        var requestDto = getMockOrganizationUnitUpdateDto();
+
+        mockMvc.perform(put("/api/v2/organizacao/unit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+
+        verify(service, never()).update(any(OrganizationUnitUpdateDto.class));
     }
 }

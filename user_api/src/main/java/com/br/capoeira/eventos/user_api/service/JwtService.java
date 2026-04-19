@@ -1,5 +1,6 @@
 package com.br.capoeira.eventos.user_api.service;
 
+import com.br.capoeira.eventos.user_api.model.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -37,14 +39,17 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(new HashMap<>(), userDetails);
-    }
+    public String generateToken(User user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("roles", List.of(user.getRole().name()));
+        claims.put("userId", user.getId());
 
-    public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        if (user.getOrganizationId() != null) {
+            claims.put("organizationId", user.getOrganizationId());
+        }
         return Jwts.builder()
-                .claims(extraClaims)
-                .subject(userDetails.getUsername())
+                .claims(claims)
+                .subject(user.getUsername())
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(getSigningKey())

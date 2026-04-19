@@ -1,7 +1,7 @@
 package com.br.capoeira.eventos.organization_api.service;
 
 import com.br.capoeira.eventos.organization_api.dto.*;
-import com.br.capoeira.eventos.organization_api.exception.ValidationException;
+import com.br.capoeira.eventos.organization_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.organization_api.mapper.OrganizationMapper;
 import com.br.capoeira.eventos.organization_api.model.Organization;
 import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
