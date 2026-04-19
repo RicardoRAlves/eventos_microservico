@@ -1,4 +1,4 @@
-package com.br.capoeira.eventos.organization_api.exception;
+package com.br.capoeira.eventos.organization_api.config.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;

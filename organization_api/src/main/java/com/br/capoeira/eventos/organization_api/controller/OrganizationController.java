@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,6 +21,7 @@ public class OrganizationController {
     private final OrganizationService service;
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrganizationResponseDto> findOrganizationById(@PathVariable("id") Long id) {
         log.info("Finding Organization by id {}", id);
         var response = service.findOrganizationById(id);
@@ -27,6 +29,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/unit/{id}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrganizationUnitResponseDto> findOrganizationUnitById(@PathVariable Long id) {
         log.info("Finding Organization Unit by id {}", id);
         var response = service.findUnitById(id);
@@ -34,6 +37,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/unit/all/{organizationId}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<OrganizationUnitResponseDto>> findAllOrganizationUnitByOrganizationId(
             @PathVariable("organizationId") Long organizationId) {
         log.info("Finding all Organization Units by organization id {}", organizationId);
@@ -42,6 +46,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/unit/code/{code}")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrganizationUnitResponseDto> findUnitByJoinCode(
             @PathVariable String code) {
 
@@ -53,6 +58,7 @@ public class OrganizationController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OrganizationResponseDto> createOrganization(
             @Valid @RequestBody OrganizationCreateRequestDto dto) {
         log.info("Creating organization with main unit {}", dto);
@@ -61,6 +67,7 @@ public class OrganizationController {
     }
 
     @PostMapping("/unit")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OrganizationUnitResponseDto> createOrganizationUnit(
             @Valid @RequestBody OrganizationUnitDto dto) {
         log.info("Creating organization unit {}", dto);
@@ -69,18 +76,20 @@ public class OrganizationController {
     }
 
     @PutMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OrganizationResponseDto> updateOrganization(
             @Valid @RequestBody OrganizationUpdateDto dto) {
         log.info("Updating organization {}", dto);
         var response = service.update(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/unit")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<OrganizationUnitResponseDto> updateOrganizationUnit(
             @Valid @RequestBody OrganizationUnitUpdateDto dto) {
-        log.info("Updating organization unit {}", dto);
+        log.info("Updating  a organization unit {}", dto);
         var response = service.update(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        return ResponseEntity.ok(response);
     }
 }
