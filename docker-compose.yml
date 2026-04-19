@@ -58,7 +58,7 @@ services:
     ports:
       - "8080:8080"
     env_file:
-      - ./event-api/variaveis.env
+      - ./variaveis.env
     depends_on:
       event-mongo-db:
         condition: service_healthy
