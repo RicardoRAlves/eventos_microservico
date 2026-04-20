@@ -24,10 +24,15 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEventResponseDto;
 
-@SpringBootTest
+@SpringBootTest(
+        webEnvironment = SpringBootTest.WebEnvironment.MOCK,
+        properties = {
+                "security.jwt.secret=U2VncmVkby1NdWl0by1Gb3J0ZS1QYXJhLU9zLVRlc3Rlcy1Db20tMzItQnl0ZXM="
+        })
 @Testcontainers
-public class EventErrorListenerIntegrationTest {
+class EventErrorListenerIntegrationTest {
 
     @Container
     static RabbitMQContainer rabbitMQ =
@@ -53,17 +58,15 @@ public class EventErrorListenerIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // declara a fila que o @RabbitListener está escutando
-        var queue = new Queue(errorQueueName, true);
-        rabbitAdmin.declareQueue(queue);
+        rabbitAdmin.declareQueue(new Queue(errorQueueName, true));
     }
 
     @Test
     void errorCreateEvent_shouldCallSendingCreateErrorToNotification() {
-        var event = getMockEvent();
-        event.setTransactionId("1xkdi2393cd");
+        var eventResponseDto = getMockEventResponseDto();
+        eventResponseDto.setTransactionId("1xkdi2393cd");
 
-        rabbitTemplate.convertAndSend(errorQueueName, event);
+        rabbitTemplate.convertAndSend(errorQueueName, eventResponseDto);
 
         await().atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->

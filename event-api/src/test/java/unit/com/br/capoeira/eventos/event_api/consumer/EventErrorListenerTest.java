@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
-import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEventResponseDto;
 
 @ExtendWith(MockitoExtension.class)
 public class EventErrorListenerTest {
@@ -24,10 +24,10 @@ public class EventErrorListenerTest {
 
     @Test
     public void whenErrorCreateEventShouldSendToQueue(){
-        var event = getMockEvent();
+        var eventResponseDto = getMockEventResponseDto();
         doNothing().when(service).sendingCreateErrorToNotification(any());
 
-        eventErrorListener.errorCreateEvent(event);
+        eventErrorListener.errorCreateEvent(eventResponseDto);
         verify(service).sendingCreateErrorToNotification(any());
     }
 }

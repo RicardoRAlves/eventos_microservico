@@ -60,7 +60,7 @@ class EventServiceTest {
         when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
         when(repository.save(any(Event.class))).thenReturn(event);
         when(eventMapper.eventToResponseDto(any(Event.class), any(Category.class))).thenReturn(responseDto);
-        doNothing().when(producer).sendingNewEventToProcessor(any(Event.class));
+        doNothing().when(producer).sendingNewEventToProcessor(any(EventResponseDto.class));
 
         var response = eventService.sendingNewEventToProcessor(requestDto);
 
@@ -68,7 +68,7 @@ class EventServiceTest {
         verify(eventMapper).createRequestDtoToEvent(any(EventCreateRequestDto.class));
         verify(categoryRepository).findByName("Capoeira");
         verify(repository).save(any(Event.class));
-        verify(producer).sendingNewEventToProcessor(any(Event.class));
+        verify(producer).sendingNewEventToProcessor(any(EventResponseDto.class));
         verify(eventMapper).eventToResponseDto(any(Event.class), any(Category.class));
     }
 
@@ -118,7 +118,7 @@ class EventServiceTest {
         when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
         when(repository.save(any(Event.class))).thenReturn(event);
         when(eventMapper.eventToResponseDto(any(Event.class), any(Category.class))).thenReturn(responseDto);
-        doNothing().when(producer).sendingEventUpdatedToProcessor(any(Event.class));
+        doNothing().when(producer).sendingEventUpdatedToProcessor(any(EventResponseDto.class));
 
         var response = eventService.updateEvent(requestDto);
 
@@ -127,7 +127,7 @@ class EventServiceTest {
         verify(eventMapper).updateRequestDtoToEvent(any(EventUpdateRequestDto.class));
         verify(categoryRepository).findByName("Capoeira");
         verify(repository).save(any(Event.class));
-        verify(producer).sendingEventUpdatedToProcessor(any(Event.class));
+        verify(producer).sendingEventUpdatedToProcessor(any(EventResponseDto.class));
         verify(eventMapper).eventToResponseDto(any(Event.class), any(Category.class));
     }
 
@@ -149,32 +149,34 @@ class EventServiceTest {
     @Test
     void whenSendingCreateErrorShouldSendToQueue() {
         var eventMock = getMockEvent();
+        var eventResponseMock = getMockEventResponseDto();
         eventMock.setTransactionId("1xkdi2393cd");
 
         when(repository.findByTransactionId(anyString())).thenReturn(Optional.of(eventMock));
         when(repository.save(any(Event.class))).thenReturn(eventMock);
-        doNothing().when(producer).sendingErrorCreateEventToNotification(any(Event.class));
+        doNothing().when(producer).sendingErrorCreateEventToNotification(any(EventResponseDto.class));
 
-        eventService.sendingCreateErrorToNotification(eventMock);
+        eventService.sendingCreateErrorToNotification(eventResponseMock);
 
         verify(repository).findByTransactionId(anyString());
         verify(repository).save(any(Event.class));
-        verify(producer).sendingErrorCreateEventToNotification(any(Event.class));
+        verify(producer).sendingErrorCreateEventToNotification(any(EventResponseDto.class));
     }
 
     @Test
     void whenSendingCreateErrorAndEventNotFoundShouldNotSave() {
         var eventMock = getMockEvent();
+        var eventResponseMock = getMockEventResponseDto();
         eventMock.setTransactionId("1xkdi2393cd");
 
         when(repository.findByTransactionId(anyString())).thenReturn(Optional.empty());
-        doNothing().when(producer).sendingErrorCreateEventToNotification(any(Event.class));
+        doNothing().when(producer).sendingErrorCreateEventToNotification(any(EventResponseDto.class));
 
-        eventService.sendingCreateErrorToNotification(eventMock);
+        eventService.sendingCreateErrorToNotification(eventResponseMock);
 
         verify(repository).findByTransactionId(anyString());
         verify(repository, never()).save(any());
-        verify(producer).sendingErrorCreateEventToNotification(any(Event.class));
+        verify(producer).sendingErrorCreateEventToNotification(any(EventResponseDto.class));
     }
 
     @Test

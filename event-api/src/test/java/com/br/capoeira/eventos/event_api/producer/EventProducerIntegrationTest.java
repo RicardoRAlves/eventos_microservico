@@ -1,6 +1,6 @@
 package com.br.capoeira.eventos.event_api.producer;
 
-import com.br.capoeira.eventos.event_api.model.Event;
+import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.BindingBuilder;
@@ -18,7 +18,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEventResponseDto;
 
 @SpringBootTest
 @Testcontainers
@@ -75,14 +75,14 @@ public class EventProducerIntegrationTest {
 
     @Test
     void sendingNewEventToProcessor_shouldDeliverMessageToExchange() {
-        var event = getMockEvent();
+        var event = getMockEventResponseDto();
 
         producer.sendingNewEventToProcessor(event);
 
         var received = rabbitTemplate.receiveAndConvert("test.queue.create", 3000);
-        assertThat(received).isNotNull().isInstanceOf(Event.class);
+        assertThat(received).isNotNull().isInstanceOf(EventResponseDto.class);
 
-        var receivedEvent = (Event) received;
+        var receivedEvent = (EventResponseDto) received;
         assertThat(receivedEvent.getTitle()).isEqualTo(event.getTitle());
     }
 
@@ -96,24 +96,24 @@ public class EventProducerIntegrationTest {
 
     @Test
     void sendingErrorCreateEventToNotification_shouldDeliverMessageToExchange() {
-        var event = getMockEvent();
+        var event = getMockEventResponseDto();
 
         producer.sendingErrorCreateEventToNotification(event);
 
         var received = rabbitTemplate.receiveAndConvert("test.queue.error", 3000);
-        assertThat(received).isNotNull().isInstanceOf(Event.class);
+        assertThat(received).isNotNull().isInstanceOf(EventResponseDto.class);
     }
 
     @Test
     void sendingEventUpdatedToProcessor_shouldDeliverMessageToExchange() {
-        var event = getMockEvent();
+        var event = getMockEventResponseDto();
 
         producer.sendingEventUpdatedToProcessor(event);
 
         var received = rabbitTemplate.receiveAndConvert("test.queue.update", 3000);
-        assertThat(received).isNotNull().isInstanceOf(Event.class);
+        assertThat(received).isNotNull().isInstanceOf(EventResponseDto.class);
 
-        var receivedEvent = (Event) received;
+        var receivedEvent = (EventResponseDto) received;
         assertThat(receivedEvent.getTitle()).isEqualTo(event.getTitle());
     }
 }

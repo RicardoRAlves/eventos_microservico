@@ -1,6 +1,6 @@
 package com.br.capoeira.eventos.event_api.producer;
 
-import com.br.capoeira.eventos.event_api.model.Event;
+import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -26,14 +26,14 @@ public class EventProducer {
     @Value("${rabbitmq.exchange.update.name}")
     private String exchangeUpdate;
 
-    public void sendingNewEventToProcessor(Event event){
-       log.info("Sending new Event to save on database {}", event);
-       rabbitTemplate.convertAndSend(createExchange, "", event);
+    public void sendingNewEventToProcessor(EventResponseDto eventResponseDto){
+       log.info("Sending new Event to save on database {}", eventResponseDto);
+       rabbitTemplate.convertAndSend(createExchange, "", eventResponseDto);
     }
 
-    public void sendingErrorCreateEventToNotification(Event event){
-        log.info("Error to save event {}, please try again", event);
-        rabbitTemplate.convertAndSend(createErrorNotificationExchange, "", event);
+    public void sendingErrorCreateEventToNotification(EventResponseDto eventResponseDto){
+        log.info("Error to save event {}, please try again", eventResponseDto);
+        rabbitTemplate.convertAndSend(createErrorNotificationExchange, "", eventResponseDto);
     }
 
     public void askingForSendingAllEvents(){
@@ -41,8 +41,8 @@ public class EventProducer {
         rabbitTemplate.convertAndSend(getAllExchange, "","");
     }
 
-    public void sendingEventUpdatedToProcessor(Event event){
-        log.info("Sending updated Event to save on database {}", event);
-        rabbitTemplate.convertAndSend(exchangeUpdate, "", event);
+    public void sendingEventUpdatedToProcessor(EventResponseDto eventResponseDto){
+        log.info("Sending updated Event to save on database {}", eventResponseDto);
+        rabbitTemplate.convertAndSend(exchangeUpdate, "", eventResponseDto);
     }
 }

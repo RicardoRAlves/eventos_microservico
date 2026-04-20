@@ -119,6 +119,6 @@ public class S3ServiceTest {
         var captor = ArgumentCaptor.forClass(DeleteObjectRequest.class);
         verify(s3Client).deleteObject(captor.capture());
 
-        assertThat(captor.getValue().key()).isEqualTo("foto.jpg");
+        assertThat(captor.getValue().key()).isEqualTo("photo.jpg");
     }
 }

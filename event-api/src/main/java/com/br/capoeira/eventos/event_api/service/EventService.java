@@ -53,9 +53,10 @@ public class EventService {
             log.info("Sending new event to processor. transactionId={}", transactionId);
 
             repository.save(event);
-            producer.sendingNewEventToProcessor(event);
+            var eventResponseDto = eventMapper.eventToResponseDto(event, category);
+            producer.sendingNewEventToProcessor(eventResponseDto);
 
-            return eventMapper.eventToResponseDto(event, category);
+            return eventResponseDto;
         } catch (Exception e) {
             var errorMessage = "Error while trying to send event to processor. transactionId=%s"
                     .formatted(transactionId);
@@ -79,9 +80,10 @@ public class EventService {
             log.info("Sending updated event to processor. transactionId={}", event.getTransactionId());
 
             repository.save(event);
-            producer.sendingEventUpdatedToProcessor(event);
+            var eventResponseDto = eventMapper.eventToResponseDto(event, category);
+            producer.sendingEventUpdatedToProcessor(eventResponseDto);
 
-            return eventMapper.eventToResponseDto(event, category);
+            return eventResponseDto;
         } catch (Exception e) {
             var errorMessage = "Error while trying to update event. transactionId=%s"
                     .formatted(event.getTransactionId());
@@ -103,8 +105,8 @@ public class EventService {
         producer.askingForSendingAllEvents();
     }
 
-    public void sendingCreateErrorToNotification(Event event) {
-        var optionalSavedEvent = repository.findByTransactionId(event.getTransactionId());
+    public void sendingCreateErrorToNotification(EventResponseDto eventResponseDto) {
+        var optionalSavedEvent = repository.findByTransactionId(eventResponseDto.getTransactionId());
 
         if (optionalSavedEvent.isPresent()) {
             var savedEvent = optionalSavedEvent.get();
@@ -112,7 +114,7 @@ public class EventService {
             repository.save(savedEvent);
         }
 
-        producer.sendingErrorCreateEventToNotification(event);
+        producer.sendingErrorCreateEventToNotification(eventResponseDto);
     }
 
     private Category findActiveCategoryByName(String name) {
