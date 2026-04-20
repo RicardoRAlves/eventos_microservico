@@ -1,4 +1,4 @@
-package com.br.capoeira.eventos.event_api.model;
+package com.br.capoeira.eventos.event_api.dto;
 
 import com.br.capoeira.eventos.event_api.enums.EventScope;
 import com.br.capoeira.eventos.event_api.enums.TypeContact;
@@ -7,8 +7,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
@@ -16,10 +14,8 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "event")
-public class Event {
+public class EventResponseDto {
 
-    @Id
     private String transactionId;
     private String title;
     private String description;
@@ -32,6 +28,7 @@ public class Event {
 
     private String locationName;
     private String address;
+
     private TypeContact typeContact;
     private String contact;
     private String image;
@@ -39,6 +36,7 @@ public class Event {
     private String categoryName;
 
     private EventScope scope;
+
     private Long organizationId;
     private Long organizationUnitId;
 

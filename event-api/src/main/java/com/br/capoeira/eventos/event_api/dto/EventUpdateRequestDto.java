@@ -1,46 +1,63 @@
-package com.br.capoeira.eventos.event_api.model;
+package com.br.capoeira.eventos.event_api.dto;
 
 import com.br.capoeira.eventos.event_api.enums.EventScope;
 import com.br.capoeira.eventos.event_api.enums.TypeContact;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
 
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Document(collection = "event")
-public class Event {
+public class EventUpdateRequestDto {
 
-    @Id
+    @NotBlank(message = "Transaction id must be informed")
     private String transactionId;
+
+    @NotBlank(message = "Event title must be informed")
     private String title;
+
+    @NotBlank(message = "Event description must be informed")
     private String description;
 
+    @NotNull(message = "Event start date must be informed")
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dateStarted;
 
+    @NotNull(message = "Event finish date must be informed")
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dateFinished;
 
+    @NotBlank(message = "Location name must be informed")
     private String locationName;
+
+    @NotBlank(message = "Address must be informed")
     private String address;
+
+    @NotNull(message = "Contact type must be informed")
     private TypeContact typeContact;
+
+    @NotBlank(message = "Contact must be informed")
     private String contact;
+
+    @NotBlank(message = "Image must be informed")
     private String image;
 
+    @NotBlank(message = "Category NAme must be informed")
     private String categoryName;
 
+    @NotNull(message = "Event scope must be informed")
     private EventScope scope;
+
     private Long organizationId;
+
     private Long organizationUnitId;
 
+    @NotNull(message = "Active status must be informed")
     private Boolean active;
 }
