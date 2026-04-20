@@ -1,6 +1,7 @@
 package com.br.capoeira.eventos.processor_api.producer;
 
-import com.br.capoeira.eventos.processor_api.entities.Event;
+import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
+import com.br.capoeira.eventos.processor_api.dto.EventResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -31,28 +32,28 @@ public class ProcessorProducer {
 
     private final RabbitTemplate rabbitTemplate;
 
-    public void sendEventForSuccessQueue(Event event){
-        rabbitTemplate.convertAndSend(createNotificationExchange, "", event);
+    public void sendEventForSuccessQueue(EventResponseDto dto){
+        rabbitTemplate.convertAndSend(createNotificationExchange, "", dto);
         log.info("Event sent to : {} successfuly", createNotificationExchange);
     }
 
-    public void sendAllEvents(List<Event> events){
-        rabbitTemplate.convertAndSend(getAllNotificationExchange, "", events);
+    public void sendAllEvents(List<EventResponseDto> dto){
+        rabbitTemplate.convertAndSend(getAllNotificationExchange, "", dto);
         log.info("sending all events to : {} successfuly", getAllNotificationExchange);
     }
 
-    public void sendEventForUpdateQueue(Event event){
-        rabbitTemplate.convertAndSend(updateNotificationExchange, "", event);
-        log.info("Update Event {}, sent to : {}", event, updateNotificationExchange);
+    public void sendEventForUpdateQueue(EventResponseDto dto){
+        rabbitTemplate.convertAndSend(updateNotificationExchange, "", dto);
+        log.info("Update Event {}, sent to : {}", dto, updateNotificationExchange);
     }
 
-    public void sendEventForUpdateErrorQueue(Event event){
-        rabbitTemplate.convertAndSend(updateErrorNotificationExchange, "", event);
-        log.info("Error to try Update Event {}, sent to : {}", event, updateErrorNotificationExchange);
+    public void sendEventForUpdateErrorQueue(EventRequestDto dto){
+        rabbitTemplate.convertAndSend(updateErrorNotificationExchange, "", dto);
+        log.info("Error to try Update Event {}, sent to : {}", dto, updateErrorNotificationExchange);
     }
 
-    public void sendEventForFailQueue(Event event){
-        rabbitTemplate.convertAndSend(errorCreateExchange, "", event);
+    public void sendEventForFailQueue(EventRequestDto dto){
+        rabbitTemplate.convertAndSend(errorCreateExchange, "", dto);
         log.info("Error Event sent to : {}", errorCreateExchange);
     }
 }

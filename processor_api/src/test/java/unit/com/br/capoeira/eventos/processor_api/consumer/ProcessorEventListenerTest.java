@@ -11,7 +11,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
-import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventRequestDto;
 
 @ExtendWith(MockitoExtension.class)
 public class ProcessorEventListenerTest {
@@ -25,7 +25,7 @@ public class ProcessorEventListenerTest {
 
     @Test
     public void shouldReceiveNewEventQueue(){
-        var event = getMockEvent();
+        var event = getMockEventRequestDto();
         doNothing().when(service).createNewEvent(any());
 
         listener.saveEvent(event);
@@ -44,7 +44,7 @@ public class ProcessorEventListenerTest {
 
     @Test
     public void shouldReceiveUpdateEventQueue(){
-        var event = getMockEvent();
+        var event = getMockEventRequestDto();
         doNothing().when(service).updateEvent(any());
 
         listener.updateEvents(event);

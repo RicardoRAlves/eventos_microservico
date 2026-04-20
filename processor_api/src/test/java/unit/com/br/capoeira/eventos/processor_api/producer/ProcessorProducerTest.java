@@ -1,6 +1,7 @@
 package unit.com.br.capoeira.eventos.processor_api.producer;
 
-import com.br.capoeira.eventos.processor_api.entities.Event;
+import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
+import com.br.capoeira.eventos.processor_api.dto.EventResponseDto;
 import com.br.capoeira.eventos.processor_api.producer.ProcessorProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
-import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventRequestDto;
+import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventResponseDto;
 
 @ExtendWith(MockitoExtension.class)
 public class ProcessorProducerTest {
@@ -28,7 +30,8 @@ public class ProcessorProducerTest {
     @InjectMocks
     private ProcessorProducer producer;
 
-    private final Event event = getMockEvent();
+    private final EventResponseDto event = getMockEventResponseDto();
+    private final EventRequestDto eventRequest = getMockEventRequestDto();
 
     @BeforeEach
     public void setUp(){
@@ -41,9 +44,9 @@ public class ProcessorProducerTest {
 
     @Test
     public void shouldSendToSuccessQueue(){
-        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
         producer.sendEventForSuccessQueue(event);
-        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
     }
 
     @Test
@@ -55,22 +58,22 @@ public class ProcessorProducerTest {
 
     @Test
     public void shouldSendToUpdateQueue(){
-        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
         producer.sendEventForUpdateQueue(event);
-        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
     }
 
     @Test
     public void shouldSendToUpdateErrorQueue(){
-        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
-        producer.sendEventForUpdateErrorQueue(event);
-        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventRequestDto.class));
+        producer.sendEventForUpdateErrorQueue(eventRequest);
+        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventRequestDto.class));
     }
 
     @Test
     public void shouldSendToFailQueue(){
-        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
-        producer.sendEventForFailQueue(event);
-        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventRequestDto.class));
+        producer.sendEventForFailQueue(eventRequest);
+        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventRequestDto.class));
     }
 }

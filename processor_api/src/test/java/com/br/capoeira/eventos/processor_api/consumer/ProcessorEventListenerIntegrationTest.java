@@ -22,6 +22,7 @@ import static org.awaitility.Awaitility.await;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
 import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventRequestDto;
 
 @SpringBootTest(properties = {
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
@@ -94,14 +95,14 @@ public class ProcessorEventListenerIntegrationTest {
     public void shouldUpdateEvent() {
         var updateQueue = new Queue(updateQueueName, true);
         rabbitAdmin.declareQueue(updateQueue);
-        var event = getMockEvent();
-        event.setId(123L);
+        var event = getMockEventRequestDto();
+        event.setTransactionId("123L");
         rabbitTemplate.convertAndSend(updateQueueName, event);
 
         await().atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->
                         verify(service).updateEvent(
-                                argThat(e -> e.getId().equals(123L))
+                                argThat(e -> e.getTransactionId().equals("123L"))
                         )
                 );
     }
