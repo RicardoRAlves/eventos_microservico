@@ -12,7 +12,7 @@ public class StandardException implements Serializable {
 
     private Long timestamp;
     private Integer status;
-    private String error;
     private String message;
     private String path;
+    private String error;
 }

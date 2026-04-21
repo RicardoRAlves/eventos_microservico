@@ -1,15 +1,15 @@
 package com.br.capoeira.eventos.processor_api.entities;
 
+import com.br.capoeira.eventos.processor_api.entities.enums.EventScope;
 import com.br.capoeira.eventos.processor_api.entities.enums.TypeContact;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -17,38 +17,73 @@ import java.time.LocalDateTime;
 public class Event {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false, unique = true)
     private String transactionId;
+
+    @Column(nullable = false)
     private String title;
+
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String description;
+
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    @Column(nullable = false)
     private LocalDateTime dateStarted;
+
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
+    @Column(nullable = false)
     private LocalDateTime dateFinished;
+
+    @Column(nullable = false)
     private String locationName;
+
+    @Column(nullable = false)
     private String address;
+
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TypeContact typeContact;
+
+    @Column(nullable = false)
     private String contact;
+
     private String image;
+
+    @Column(nullable = false)
     private Boolean active;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private EventScope scope;
+
+    private Long organizationId;
+
+    private Long organizationUnitId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "category_id", nullable = false)
+    private Category category;
+
     @Column(nullable = false, updatable = false)
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime createAt;
+
     @Column(nullable = false)
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime updatedAt;
 
     @PrePersist
-    public void prePersist(){
+    public void prePersist() {
         var now = LocalDateTime.now();
         createAt = now;
         updatedAt = now;
     }
 
     @PreUpdate
-    public void preUpdate(){
+    public void preUpdate() {
         updatedAt = LocalDateTime.now();
     }
 }

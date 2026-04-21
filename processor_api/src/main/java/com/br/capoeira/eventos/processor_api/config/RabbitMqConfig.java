@@ -57,16 +57,16 @@ public class RabbitMqConfig {
 
     @Bean
     public FanoutExchange eventCreateNotificationExchange(){
+        return new FanoutExchange(createNotificationExchange);
+    }
+
+    @Bean
+    public FanoutExchange eventGetAllNotificationExchange(){
         return new FanoutExchange(exchangeGetAllNotificationName);
     }
 
     @Bean
     public FanoutExchange eventGetAllExchange(){
-        return new FanoutExchange(exchangeGetAllName);
-    }
-
-    @Bean
-    public FanoutExchange eventGetAllNotificationExchange(){
         return new FanoutExchange(exchangeGetAllName);
     }
 

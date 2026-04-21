@@ -1,9 +1,19 @@
 package unit.com.br.capoeira.eventos.event_api.service;
 
 import com.br.capoeira.eventos.event_api.config.exception.ValidationException;
+import com.br.capoeira.eventos.event_api.dto.EventCreateRequestDto;
+import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
+import com.br.capoeira.eventos.event_api.dto.EventUpdateRequestDto;
+import com.br.capoeira.eventos.event_api.dto.OrganizationResponseDto;
+import com.br.capoeira.eventos.event_api.enums.EventScope;
+import com.br.capoeira.eventos.event_api.enums.TypeContact;
+import com.br.capoeira.eventos.event_api.mapper.EventMapper;
+import com.br.capoeira.eventos.event_api.model.Category;
 import com.br.capoeira.eventos.event_api.model.Event;
 import com.br.capoeira.eventos.event_api.producer.EventProducer;
+import com.br.capoeira.eventos.event_api.repository.CategoryRepository;
 import com.br.capoeira.eventos.event_api.repository.EventRepository;
+import com.br.capoeira.eventos.event_api.restClient.OrganizationClient;
 import com.br.capoeira.eventos.event_api.service.EventService;
 import com.br.capoeira.eventos.event_api.service.aws.S3Service;
 import org.junit.jupiter.api.Test;
@@ -21,193 +31,419 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
-import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEvent;
 
 @ExtendWith(MockitoExtension.class)
-public class EventServiceTest {
+class EventServiceTest {
 
+    @Mock
+    private EventMapper eventMapper;
     @Mock
     private EventProducer producer;
     @Mock
     private EventRepository repository;
     @Mock
+    private CategoryRepository categoryRepository;
+    @Mock
     private S3Service s3Service;
+    @Mock
+    private OrganizationClient client;
+
     @InjectMocks
     private EventService eventService;
 
     @Test
-    public void whenSendNewEventToProcessorShouldSave(){
+    void whenSendNewEventToProcessorShouldSave() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
-        when(repository.save(any())).thenReturn(new Event());
-        doNothing().when(producer).sendingNewEventToProcessor(any());
-        eventService.sendingNewEventToProcessor(event);
+        var category = getMockCategory();
+        var responseDto = getMockEventResponseDto();
 
-        assertThat(event.getTransactionId()).isNotNull();
+        when(client.findUnitById(anyLong())).thenReturn(new OrganizationResponseDto(1L, 1L));
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+        when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
+        when(repository.save(any(Event.class))).thenReturn(event);
+        when(eventMapper.eventToResponseDto(any(Event.class), any(Category.class))).thenReturn(responseDto);
+        doNothing().when(producer).sendingNewEventToProcessor(any(EventResponseDto.class));
 
-        verify(repository).save(any());
-        verify(producer).sendingNewEventToProcessor(any());
+        var response = eventService.sendingNewEventToProcessor(requestDto);
+
+        assertThat(response).isNotNull();
+        verify(client).findUnitById(anyLong());
+        verify(eventMapper).createRequestDtoToEvent(any(EventCreateRequestDto.class));
+        verify(categoryRepository).findByName("Capoeira");
+        verify(repository).save(any(Event.class));
+        verify(producer).sendingNewEventToProcessor(any(EventResponseDto.class));
+        verify(eventMapper).eventToResponseDto(any(Event.class), any(Category.class));
     }
 
     @Test
-    public void whenUpdatePhotoShouldReturnPath() throws URISyntaxException {
+    void whenUpdatePhotoShouldReturnPath() throws URISyntaxException {
         var fileMock = mock(MultipartFile.class);
-
+        when(fileMock.isEmpty()).thenReturn(false);
         when(s3Service.uploadFile(any())).thenReturn(new URI("https://my-bucket.s3.amazonaws.com/photo.jpg"));
+
         var path = eventService.updatePhoto(fileMock);
-        assertThat(path).isNotEmpty();
+
+        assertThat(path).isEqualTo("https://my-bucket.s3.amazonaws.com/photo.jpg");
+        verify(s3Service).uploadFile(fileMock);
     }
+
     @Test
-    public void whenFindAllShouldReturnPath() {
+    void whenUpdatePhotoWithEmptyFileShouldThrowException() {
+        var fileMock = mock(MultipartFile.class);
+        when(fileMock.isEmpty()).thenReturn(true);
+
+        assertThatThrownBy(() -> eventService.updatePhoto(fileMock))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Image file must be provided");
+
+        verifyNoInteractions(s3Service);
+    }
+
+    @Test
+    void whenFindAllShouldSendMessageToQueue() {
         doNothing().when(producer).askingForSendingAllEvents();
+
         eventService.findAllEvents();
+
         verify(producer).askingForSendingAllEvents();
     }
 
     @Test
-    public void whenUpdateEventShouldSendToQueue() {
-        var eventMock = getMockEvent();
-        eventMock.setTransactionId("1xkdi2393cd");
-        when(repository.save(any())).thenReturn(eventMock);
-        when(repository.existsByTransactionId(anyString())).thenReturn(true);
-        doNothing().when(producer).sendingEventUpdatedToProcessor(any());
-        eventService.updateEvent(eventMock);
-        verify(repository).existsByTransactionId(anyString());
-        verify(repository).save(any());
-        verify(producer).sendingEventUpdatedToProcessor(any());
+    void whenUpdateEventShouldSendToQueue() {
+        var requestDto = getMockEventUpdateRequestDto();
+        var event = getMockEvent();
+        event.setTransactionId("1xkdi2393cd");
+
+        var category = getMockCategory();
+        var responseDto = getMockEventResponseDto();
+
+        when(client.findUnitById(anyLong())).thenReturn(new OrganizationResponseDto(1L, 1L));
+        when(repository.findByTransactionId(anyString())).thenReturn(Optional.of(event));
+        doNothing().when(eventMapper).updateRequestDtoToEvent(any(EventUpdateRequestDto.class), any(Event.class));
+        when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
+        when(repository.save(any(Event.class))).thenReturn(event);
+        when(eventMapper.eventToResponseDto(any(Event.class), any(Category.class))).thenReturn(responseDto);
+        doNothing().when(producer).sendingEventUpdatedToProcessor(any(EventResponseDto.class));
+
+        var response = eventService.updateEvent(requestDto);
+
+        assertThat(response).isNotNull();
+        verify(client).findUnitById(anyLong());
+        verify(repository).findByTransactionId(anyString());
+        verify(eventMapper).updateRequestDtoToEvent(any(EventUpdateRequestDto.class), any(Event.class));
+        verify(categoryRepository).findByName("Capoeira");
+        verify(repository).save(any(Event.class));
+        verify(producer).sendingEventUpdatedToProcessor(any(EventResponseDto.class));
+        verify(eventMapper).eventToResponseDto(any(Event.class), any(Category.class));
     }
 
     @Test
-    public void whenUpdateEventNotFoundShouldThrowException() {
-        var eventMock = getMockEvent();
-        eventMock.setTransactionId("1xkdi2393cd");
-        when(repository.existsByTransactionId(anyString())).thenReturn(false);
-        assertThatThrownBy( () -> eventService.updateEvent(eventMock))
+    void whenUpdateEventNotFoundShouldThrowException() {
+        var requestDto = getMockEventUpdateRequestDto();
+
+        when(repository.findByTransactionId(requestDto.getTransactionId()))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> eventService.updateEvent(requestDto))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Event not found");
+
+        verify(repository).findByTransactionId(requestDto.getTransactionId());
+        verify(repository, never()).save(any());
         verifyNoInteractions(producer);
-        verify(repository, never()).save(any());
     }
 
     @Test
-    public void whenSendingCreateErrorShouldSendToQueue() {
+    void whenSendingCreateErrorShouldSendToQueue() {
         var eventMock = getMockEvent();
+        var eventResponseMock = getMockEventResponseDto();
         eventMock.setTransactionId("1xkdi2393cd");
-        when(repository.save(any())).thenReturn(eventMock);
+
         when(repository.findByTransactionId(anyString())).thenReturn(Optional.of(eventMock));
-        doNothing().when(producer).sendingErrorCreateEventToNotification(any());
-        eventService.sendingCreateErrorToNotification(eventMock);
+        when(repository.save(any(Event.class))).thenReturn(eventMock);
+        doNothing().when(producer).sendingErrorCreateEventToNotification(any(EventResponseDto.class));
+
+        eventService.sendingCreateErrorToNotification(eventResponseMock);
+
         verify(repository).findByTransactionId(anyString());
-        verify(repository).save(any());
-        verify(producer).sendingErrorCreateEventToNotification(any());
+        verify(repository).save(any(Event.class));
+        verify(producer).sendingErrorCreateEventToNotification(any(EventResponseDto.class));
     }
 
     @Test
-    public void whenSendingCreateErrorAndEventNotFoundShouldNotSave() {
+    void whenSendingCreateErrorAndEventNotFoundShouldNotSave() {
         var eventMock = getMockEvent();
+        var eventResponseMock = getMockEventResponseDto();
         eventMock.setTransactionId("1xkdi2393cd");
+
         when(repository.findByTransactionId(anyString())).thenReturn(Optional.empty());
-        doNothing().when(producer).sendingErrorCreateEventToNotification(any());
-        eventService.sendingCreateErrorToNotification(eventMock);
+        doNothing().when(producer).sendingErrorCreateEventToNotification(any(EventResponseDto.class));
+
+        eventService.sendingCreateErrorToNotification(eventResponseMock);
+
         verify(repository).findByTransactionId(anyString());
         verify(repository, never()).save(any());
-        verify(producer).sendingErrorCreateEventToNotification(any());
+        verify(producer).sendingErrorCreateEventToNotification(any(EventResponseDto.class));
     }
 
     @Test
-    public void whenTitleEmptyShouldNotSaveNewEvent() {
+    void whenTitleEmptyShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
         event.setTitle(null);
 
-        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
-                .isInstanceOf(RuntimeException.class)
-                        .hasMessageContaining("Title must be informed");
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Title must be informed");
+
+        verify(eventMapper).createRequestDtoToEvent(any(EventCreateRequestDto.class));
+        verifyNoInteractions(categoryRepository);
         verifyNoInteractions(repository);
         verifyNoInteractions(producer);
     }
 
     @Test
-    public void whenDescriptionEmptyShouldNotSaveNewEvent() {
+    void whenDescriptionEmptyShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
         event.setDescription(null);
 
-        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
-                .isInstanceOf(RuntimeException.class)
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Description must be informed");
+
+        verifyNoInteractions(categoryRepository);
         verifyNoInteractions(repository);
         verifyNoInteractions(producer);
     }
 
     @Test
-    public void whenDateStartedEmptyShouldNotSaveNewEvent() {
+    void whenDateStartedEmptyShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
         event.setDateStarted(null);
 
-        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Date of started of the Event must be informed");
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Date started of the event must be informed");
+
+        verifyNoInteractions(categoryRepository);
         verifyNoInteractions(repository);
         verifyNoInteractions(producer);
     }
 
     @Test
-    public void whenDateFinishedEmptyShouldNotSaveNewEvent() {
+    void whenDateFinishedEmptyShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
         event.setDateFinished(null);
 
-        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Date of finish of the Event must be informed");
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Date finished of the event must be informed");
+
+        verifyNoInteractions(categoryRepository);
         verifyNoInteractions(repository);
         verifyNoInteractions(producer);
     }
 
     @Test
-    public void whenDateFinishedIsLessEqualToStartedShouldNotSaveNewEvent() {
+    void whenDateFinishedIsLessEqualToStartedShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
         event.setDateStarted(LocalDateTime.now());
         event.setDateFinished(LocalDateTime.now());
 
-        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessageContaining("Date of finish must be after the date of started");
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Date finished must be after date started");
+
+        verifyNoInteractions(categoryRepository);
         verifyNoInteractions(repository);
         verifyNoInteractions(producer);
     }
 
     @Test
-    public void whenLocationEmptyShouldNotSaveNewEvent() {
+    void whenLocationEmptyShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
         event.setLocationName(null);
 
-        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
-                .isInstanceOf(RuntimeException.class)
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Location name must be informed");
+
+        verifyNoInteractions(categoryRepository);
         verifyNoInteractions(repository);
         verifyNoInteractions(producer);
     }
 
     @Test
-    public void whenAddressEmptyShouldNotSaveNewEvent() {
+    void whenAddressEmptyShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
         event.setAddress(null);
 
-        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
-                .isInstanceOf(RuntimeException.class)
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Address must be informed");
+
+        verifyNoInteractions(categoryRepository);
         verifyNoInteractions(repository);
         verifyNoInteractions(producer);
     }
 
     @Test
-    public void whenImageEmptyShouldNotSaveNewEvent() {
+    void whenImageEmptyShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
         event.setImage(null);
 
-        assertThatThrownBy( () -> eventService.sendingNewEventToProcessor(event))
-                .isInstanceOf(RuntimeException.class)
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Image must be informed");
+
+        verifyNoInteractions(categoryRepository);
         verifyNoInteractions(repository);
         verifyNoInteractions(producer);
+    }
+
+    @Test
+    void whenCategoryNameEmptyShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
+        var event = getMockEvent();
+        event.setCategoryName(null);
+
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Category name must be informed");
+
+        verifyNoInteractions(categoryRepository);
+        verifyNoInteractions(repository);
+        verifyNoInteractions(producer);
+    }
+
+    @Test
+    void whenCategoryNotFoundShouldNotSaveNewEvent() {
+        var requestDto = getMockEventCreateRequestDto();
+        var event = getMockEvent();
+
+        when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+        when(client.findUnitById(anyLong())).thenReturn(new OrganizationResponseDto(1L, 1L));
+        when(categoryRepository.findByName("Capoeira")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))
+                .isInstanceOf(ValidationException.class)
+                .hasMessageContaining("Category not found");
+
+        verify(categoryRepository).findByName("Capoeira");
+        verify(repository, never()).save(any());
+        verifyNoInteractions(producer);
+    }
+
+    private Event getMockEvent() {
+        return Event.builder()
+                .title("Batizado Bonfim")
+                .description("Evento anual de capoeira")
+                .dateStarted(LocalDateTime.of(2026, 5, 10, 19, 0, 0))
+                .dateFinished(LocalDateTime.of(2026, 5, 10, 22, 0, 0))
+                .locationName("Academia Central")
+                .address("Rua das Flores, 100")
+                .typeContact(TypeContact.WHATSAPP)
+                .contact("11999999999")
+                .image("https://image.com/evento.png")
+                .categoryName("Capoeira")
+                .scope(EventScope.ORGANIZATION_UNIT)
+                .organizationId(1L)
+                .organizationUnitId(10L)
+                .active(true)
+                .build();
+    }
+
+    private Category getMockCategory() {
+        return Category.builder()
+                .id(1L)
+                .name("Capoeira")
+                .active(true)
+                .build();
+    }
+
+    private EventCreateRequestDto getMockEventCreateRequestDto() {
+        return new EventCreateRequestDto(
+                "Batizado Bonfim",
+                "Evento anual de capoeira",
+                LocalDateTime.of(2026, 5, 10, 19, 0, 0),
+                LocalDateTime.of(2026, 5, 10, 22, 0, 0),
+                "Academia Central",
+                "Rua das Flores, 100",
+                TypeContact.WHATSAPP,
+                "11999999999",
+                "https://image.com/evento.png",
+                "Capoeira",
+                EventScope.ORGANIZATION_UNIT,
+                1L,
+                10L
+        );
+    }
+
+    private EventUpdateRequestDto getMockEventUpdateRequestDto() {
+        return new EventUpdateRequestDto(
+                "1xkdi2393cd",
+                "Batizado Bonfim",
+                "Evento anual de capoeira",
+                LocalDateTime.of(2026, 5, 10, 19, 0, 0),
+                LocalDateTime.of(2026, 5, 10, 22, 0, 0),
+                "Academia Central",
+                "Rua das Flores, 100",
+                TypeContact.WHATSAPP,
+                "11999999999",
+                "https://image.com/evento.png",
+                "Capoeira",
+                EventScope.ORGANIZATION_UNIT,
+                1L,
+                10L,
+                true
+        );
+    }
+
+    private EventResponseDto getMockEventResponseDto() {
+        return EventResponseDto.builder()
+                .transactionId("1xkdi2393cd")
+                .title("Batizado Bonfim")
+                .description("Evento anual de capoeira")
+                .dateStarted(LocalDateTime.of(2026, 5, 10, 19, 0, 0))
+                .dateFinished(LocalDateTime.of(2026, 5, 10, 22, 0, 0))
+                .locationName("Academia Central")
+                .address("Rua das Flores, 100")
+                .typeContact(TypeContact.WHATSAPP)
+                .contact("11999999999")
+                .image("https://image.com/evento.png")
+                .categoryName("Capoeira")
+                .scope(EventScope.ORGANIZATION_UNIT)
+                .organizationId(1L)
+                .organizationUnitId(10L)
+                .active(true)
+                .build();
     }
 }

@@ -1,7 +1,8 @@
 package com.br.capoeira.eventos.processor_api.producer;
 
 import com.br.capoeira.eventos.processor_api.consumer.ProcessorEventListener;
-import com.br.capoeira.eventos.processor_api.entities.Event;
+import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
+import com.br.capoeira.eventos.processor_api.dto.EventResponseDto;
 import com.br.capoeira.eventos.processor_api.service.ProcessorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventRequestDto;
+import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventResponseDto;
 
 @SpringBootTest(properties = {
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
@@ -102,20 +104,20 @@ public class ProcessorProducerIntegrationTest {
 
     @Test
     void shouldCreateNewEvent() {
-        var event = getMockEvent();
+        var event = getMockEventResponseDto();
 
         producer.sendEventForSuccessQueue(event);
 
         var received = rabbitTemplate.receiveAndConvert(createQueueName, 3000);
-        assertThat(received).isNotNull().isInstanceOf(Event.class);
+        assertThat(received).isNotNull().isInstanceOf(EventResponseDto.class);
 
-        var receivedEvent = (Event) received;
+        var receivedEvent = (EventResponseDto) received;
         assertThat(receivedEvent.getTitle()).isEqualTo(event.getTitle());
     }
 
     @Test
     void shouldGetAllEvents() {
-        var event = getMockEvent();
+        var event = getMockEventResponseDto();
 
         producer.sendAllEvents(List.of(event));
 
@@ -128,40 +130,40 @@ public class ProcessorProducerIntegrationTest {
 
     @Test
     void shouldUpdateEvent() {
-        var event = getMockEvent();
+        var event = getMockEventResponseDto();
 
         producer.sendEventForUpdateQueue(event);
 
         var received = rabbitTemplate.receiveAndConvert(updateQueueName, 3000);
-        assertThat(received).isNotNull().isInstanceOf(Event.class);
+        assertThat(received).isNotNull().isInstanceOf(EventResponseDto.class);
 
-        var receivedEvent = (Event) received;
+        var receivedEvent = (EventResponseDto) received;
         assertThat(receivedEvent.getTitle()).isEqualTo(event.getTitle());
     }
 
     @Test
     void shouldSendCreateErrorEvent() {
-        var event = getMockEvent();
+        var event = getMockEventRequestDto();
 
         producer.sendEventForFailQueue(event);
 
         var received = rabbitTemplate.receiveAndConvert(errorCreateQueueName, 3000);
-        assertThat(received).isNotNull().isInstanceOf(Event.class);
+        assertThat(received).isNotNull().isInstanceOf(EventRequestDto.class);
 
-        var receivedEvent = (Event) received;
+        var receivedEvent = (EventRequestDto) received;
         assertThat(receivedEvent.getTitle()).isEqualTo(event.getTitle());
     }
 
     @Test
     void shouldSendUpdateErrorEvent() {
-        var event = getMockEvent();
+        var event = getMockEventRequestDto();
 
         producer.sendEventForUpdateErrorQueue(event);
 
         var received = rabbitTemplate.receiveAndConvert(errorUpdateQueueName, 3000);
-        assertThat(received).isNotNull().isInstanceOf(Event.class);
+        assertThat(received).isNotNull().isInstanceOf(EventRequestDto.class);
 
-        var receivedEvent = (Event) received;
+        var receivedEvent = (EventRequestDto) received;
         assertThat(receivedEvent.getTitle()).isEqualTo(event.getTitle());
     }
 }

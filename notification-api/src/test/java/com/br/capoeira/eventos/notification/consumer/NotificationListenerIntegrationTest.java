@@ -1,6 +1,6 @@
 package com.br.capoeira.eventos.notification.consumer;
 
-import com.br.capoeira.eventos.notification.model.Event;
+import com.br.capoeira.eventos.notification.dto.Event;
 import com.br.capoeira.eventos.notification.service.NotificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
@@ -124,14 +124,14 @@ public class NotificationListenerIntegrationTest {
         var createErrorQueue = new Queue(errorCreateNotificationName, true);
         rabbitAdmin.declareQueue(createErrorQueue);
 
-        event.setId(123L);
+        event.setTransactionId("123L");
 
         rabbitTemplate.convertAndSend(errorCreateNotificationName, event);
 
         await().atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->
                         verify(service).createErrorEvent(
-                                argThat(e -> e.getId().equals(123L))
+                                argThat(e -> e.getTransactionId().equals("123L"))
                         )
                 );
     }
@@ -141,14 +141,14 @@ public class NotificationListenerIntegrationTest {
         var createErrorQueue = new Queue(errorUpdateNotificationName, true);
         rabbitAdmin.declareQueue(createErrorQueue);
 
-        event.setId(123L);
+        event.setTransactionId("123L");
 
         rabbitTemplate.convertAndSend(errorUpdateNotificationName, event);
 
         await().atMost(5, TimeUnit.SECONDS)
                 .untilAsserted(() ->
                         verify(service).updateErrorEvent(
-                                argThat(e -> e.getId().equals(123L))
+                                argThat(e -> e.getTransactionId().equals("123L"))
                         )
                 );
     }

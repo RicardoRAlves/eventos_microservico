@@ -1,8 +1,8 @@
 package unit.com.br.capoeira.eventos.notification.utils;
 
 
-import com.br.capoeira.eventos.notification.model.Event;
-import com.br.capoeira.eventos.notification.model.enums.TypeContact;
+import com.br.capoeira.eventos.notification.dto.Event;
+import com.br.capoeira.eventos.notification.dto.enums.TypeContact;
 
 import java.time.LocalDateTime;
 

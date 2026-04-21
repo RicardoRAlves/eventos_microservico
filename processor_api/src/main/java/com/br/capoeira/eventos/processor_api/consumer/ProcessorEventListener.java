@@ -1,6 +1,6 @@
 package com.br.capoeira.eventos.processor_api.consumer;
 
-import com.br.capoeira.eventos.processor_api.entities.Event;
+import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
 import com.br.capoeira.eventos.processor_api.service.ProcessorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,9 +15,9 @@ public class ProcessorEventListener {
     private final ProcessorService service;
 
     @RabbitListener(queues = "${rabbitmq.create.queue.name}")
-    public void saveEvent(Event event){
-        log.info("Event received, {} ", event);
-        service.createNewEvent(event);
+    public void saveEvent(EventRequestDto dto){
+        log.info("Event received, {} ", dto);
+        service.createNewEvent(dto);
     }
 
     @RabbitListener(queues = "${rabbitmq.get-all.queue.name}")
@@ -27,8 +27,8 @@ public class ProcessorEventListener {
     }
 
     @RabbitListener(queues = "${rabbitmq.update.queue.name}")
-    public void updateEvents(Event event){
-        log.info("updating event {} ", event.getId());
-        service.updateEvent(event);
+    public void updateEvents(EventRequestDto dto){
+        log.info("updating event {} ", dto.getTransactionId());
+        service.updateEvent(dto);
     }
 }

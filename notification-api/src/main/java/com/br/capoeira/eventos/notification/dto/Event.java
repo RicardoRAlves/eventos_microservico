@@ -1,6 +1,6 @@
-package com.br.capoeira.eventos.notification.model;
+package com.br.capoeira.eventos.notification.dto;
 
-import com.br.capoeira.eventos.notification.model.enums.TypeContact;
+import com.br.capoeira.eventos.notification.dto.enums.TypeContact;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Data;

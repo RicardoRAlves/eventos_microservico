@@ -1,6 +1,6 @@
 package unit.com.br.capoeira.eventos.event_api.producer;
 
-import com.br.capoeira.eventos.event_api.model.Event;
+import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
 import com.br.capoeira.eventos.event_api.producer.EventProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -15,7 +15,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
-import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEvent;
+import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEventResponseDto;
 
 @ExtendWith(MockitoExtension.class)
 public class EventProducerTest {
@@ -26,7 +26,7 @@ public class EventProducerTest {
     @InjectMocks
     private EventProducer producer;
 
-    private final Event event = getMockEvent();
+    private final EventResponseDto eventResponseDto = getMockEventResponseDto();
 
     @BeforeEach
     public void setUp(){
@@ -39,16 +39,16 @@ public class EventProducerTest {
 
     @Test
     public void whenSendingNewEventToProcessorShouldAddToQueue(){
-        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
-        producer.sendingNewEventToProcessor(event);
-        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
+        producer.sendingNewEventToProcessor(eventResponseDto);
+        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
     }
 
     @Test
     public void whenSendingErrorCreateEventToNotificationShouldAddToQueue(){
-        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
-        producer.sendingErrorCreateEventToNotification(event);
-        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
+        producer.sendingErrorCreateEventToNotification(eventResponseDto);
+        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
     }
 
     @Test
@@ -60,8 +60,8 @@ public class EventProducerTest {
 
     @Test
     public void whenSendingEventUpdatedToProcessorShouldAddToQueue(){
-        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
-        producer.sendingEventUpdatedToProcessor(event);
-        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(Event.class));
+        doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
+        producer.sendingEventUpdatedToProcessor(eventResponseDto);
+        verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
     }
 }

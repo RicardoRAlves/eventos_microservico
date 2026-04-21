@@ -1,5 +1,6 @@
 package com.br.capoeira.eventos.event_api.model;
 
+import com.br.capoeira.eventos.event_api.enums.EventScope;
 import com.br.capoeira.eventos.event_api.enums.TypeContact;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
@@ -17,18 +18,29 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Document(collection = "event")
 public class Event {
+
     @Id
     private String transactionId;
     private String title;
     private String description;
+
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dateStarted;
+
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime dateFinished;
+
     private String locationName;
     private String address;
     private TypeContact typeContact;
     private String contact;
     private String image;
+
+    private String categoryName;
+
+    private EventScope scope;
+    private Long organizationId;
+    private Long organizationUnitId;
+
     private Boolean active;
 }
