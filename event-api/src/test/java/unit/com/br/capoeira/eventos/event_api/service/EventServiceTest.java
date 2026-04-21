@@ -4,6 +4,7 @@ import com.br.capoeira.eventos.event_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.event_api.dto.EventCreateRequestDto;
 import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
 import com.br.capoeira.eventos.event_api.dto.EventUpdateRequestDto;
+import com.br.capoeira.eventos.event_api.dto.OrganizationResponseDto;
 import com.br.capoeira.eventos.event_api.enums.EventScope;
 import com.br.capoeira.eventos.event_api.enums.TypeContact;
 import com.br.capoeira.eventos.event_api.mapper.EventMapper;
@@ -12,6 +13,7 @@ import com.br.capoeira.eventos.event_api.model.Event;
 import com.br.capoeira.eventos.event_api.producer.EventProducer;
 import com.br.capoeira.eventos.event_api.repository.CategoryRepository;
 import com.br.capoeira.eventos.event_api.repository.EventRepository;
+import com.br.capoeira.eventos.event_api.restClient.OrganizationClient;
 import com.br.capoeira.eventos.event_api.service.EventService;
 import com.br.capoeira.eventos.event_api.service.aws.S3Service;
 import org.junit.jupiter.api.Test;
@@ -45,6 +47,8 @@ class EventServiceTest {
     private CategoryRepository categoryRepository;
     @Mock
     private S3Service s3Service;
+    @Mock
+    private OrganizationClient client;
 
     @InjectMocks
     private EventService eventService;
@@ -56,6 +60,7 @@ class EventServiceTest {
         var category = getMockCategory();
         var responseDto = getMockEventResponseDto();
 
+        when(client.findUnitById(anyLong())).thenReturn(new OrganizationResponseDto(1L, 1L));
         when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
         when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
         when(repository.save(any(Event.class))).thenReturn(event);
@@ -65,6 +70,7 @@ class EventServiceTest {
         var response = eventService.sendingNewEventToProcessor(requestDto);
 
         assertThat(response).isNotNull();
+        verify(client).findUnitById(anyLong());
         verify(eventMapper).createRequestDtoToEvent(any(EventCreateRequestDto.class));
         verify(categoryRepository).findByName("Capoeira");
         verify(repository).save(any(Event.class));
@@ -110,11 +116,13 @@ class EventServiceTest {
         var requestDto = getMockEventUpdateRequestDto();
         var event = getMockEvent();
         event.setTransactionId("1xkdi2393cd");
+
         var category = getMockCategory();
         var responseDto = getMockEventResponseDto();
 
-        when(repository.existsByTransactionId(anyString())).thenReturn(true);
-        when(eventMapper.updateRequestDtoToEvent(any(EventUpdateRequestDto.class))).thenReturn(event);
+        when(client.findUnitById(anyLong())).thenReturn(new OrganizationResponseDto(1L, 1L));
+        when(repository.findByTransactionId(anyString())).thenReturn(Optional.of(event));
+        doNothing().when(eventMapper).updateRequestDtoToEvent(any(EventUpdateRequestDto.class), any(Event.class));
         when(categoryRepository.findByName(anyString())).thenReturn(Optional.of(category));
         when(repository.save(any(Event.class))).thenReturn(event);
         when(eventMapper.eventToResponseDto(any(Event.class), any(Category.class))).thenReturn(responseDto);
@@ -123,8 +131,9 @@ class EventServiceTest {
         var response = eventService.updateEvent(requestDto);
 
         assertThat(response).isNotNull();
-        verify(repository).existsByTransactionId(anyString());
-        verify(eventMapper).updateRequestDtoToEvent(any(EventUpdateRequestDto.class));
+        verify(client).findUnitById(anyLong());
+        verify(repository).findByTransactionId(anyString());
+        verify(eventMapper).updateRequestDtoToEvent(any(EventUpdateRequestDto.class), any(Event.class));
         verify(categoryRepository).findByName("Capoeira");
         verify(repository).save(any(Event.class));
         verify(producer).sendingEventUpdatedToProcessor(any(EventResponseDto.class));
@@ -135,13 +144,14 @@ class EventServiceTest {
     void whenUpdateEventNotFoundShouldThrowException() {
         var requestDto = getMockEventUpdateRequestDto();
 
-        when(repository.existsByTransactionId(anyString())).thenReturn(false);
+        when(repository.findByTransactionId(requestDto.getTransactionId()))
+                .thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> eventService.updateEvent(requestDto))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Event not found");
 
-        verify(repository).existsByTransactionId(anyString());
+        verify(repository).findByTransactionId(requestDto.getTransactionId());
         verify(repository, never()).save(any());
         verifyNoInteractions(producer);
     }
@@ -340,6 +350,7 @@ class EventServiceTest {
         var event = getMockEvent();
 
         when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
+        when(client.findUnitById(anyLong())).thenReturn(new OrganizationResponseDto(1L, 1L));
         when(categoryRepository.findByName("Capoeira")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> eventService.sendingNewEventToProcessor(requestDto))

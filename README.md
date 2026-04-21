@@ -129,7 +129,7 @@ Response:
 ### 🏢 Create Organization (ADMIN only)
 
 ```bash
-curl -X POST http://localhost:8081/api/v2/organizacao \
+curl -X POST http://localhost:8081/api/v1/organizacao \
   -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
   -d '{
@@ -151,7 +151,7 @@ curl -X POST http://localhost:8081/api/v2/organizacao \
 ### 📖 Get Organization (Authenticated)
 
 ```bash
-curl -X GET http://localhost:8081/api/v2/organizacao/1 \
+curl -X GET http://localhost:8081/api/v1/organizacao/1 \
   -H "Authorization: Bearer <token>"
 ```
 

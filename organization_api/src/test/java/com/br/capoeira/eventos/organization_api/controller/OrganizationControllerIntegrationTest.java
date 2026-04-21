@@ -52,7 +52,7 @@ class OrganizationControllerIntegrationTest {
 
         when(service.findOrganizationById(1L)).thenReturn(responseDto);
 
-        mockMvc.perform(get("/api/v2/organizacao/1")
+        mockMvc.perform(get("/api/v1/organizacao/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
@@ -67,7 +67,7 @@ class OrganizationControllerIntegrationTest {
 
     @Test
     void shouldReturnUnauthorizedWhenFindOrganizationByIdWithoutAuthentication() throws Exception {
-        mockMvc.perform(get("/api/v2/organizacao/1")
+        mockMvc.perform(get("/api/v1/organizacao/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnauthorized());
 
@@ -81,7 +81,7 @@ class OrganizationControllerIntegrationTest {
 
         when(service.findUnitById(1L)).thenReturn(responseDto);
 
-        mockMvc.perform(get("/api/v2/organizacao/unit/1")
+        mockMvc.perform(get("/api/v1/organizacao/unit/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
@@ -107,7 +107,7 @@ class OrganizationControllerIntegrationTest {
 
         when(service.findAllByOrganizationId(1L)).thenReturn(List.of(responseDto));
 
-        mockMvc.perform(get("/api/v2/organizacao/unit/all/1")
+        mockMvc.perform(get("/api/v1/organizacao/unit/all/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].id").value(responseDto.getId()))
@@ -129,7 +129,7 @@ class OrganizationControllerIntegrationTest {
     @Test
     @WithMockUser(roles = "CLIENT")
     void shouldReturnForbiddenWhenFindAllOrganizationUnitsByOrganizationIdWithClientRole() throws Exception {
-        mockMvc.perform(get("/api/v2/organizacao/unit/all/1")
+        mockMvc.perform(get("/api/v1/organizacao/unit/all/1")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
 
@@ -144,7 +144,7 @@ class OrganizationControllerIntegrationTest {
 
         when(service.createWithMainUnit(any(OrganizationCreateRequestDto.class))).thenReturn(responseDto);
 
-        mockMvc.perform(post("/api/v2/organizacao")
+        mockMvc.perform(post("/api/v1/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
@@ -163,7 +163,7 @@ class OrganizationControllerIntegrationTest {
     void shouldReturnForbiddenWhenCreateOrganizationWithClientRole() throws Exception {
         var requestDto = getMockOrganizationCreateRequestDto();
 
-        mockMvc.perform(post("/api/v2/organizacao")
+        mockMvc.perform(post("/api/v1/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isForbidden());
@@ -179,7 +179,7 @@ class OrganizationControllerIntegrationTest {
 
         when(service.create(any(OrganizationUnitDto.class))).thenReturn(responseDto);
 
-        mockMvc.perform(post("/api/v2/organizacao/unit")
+        mockMvc.perform(post("/api/v1/organizacao/unit")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isCreated())
@@ -204,7 +204,7 @@ class OrganizationControllerIntegrationTest {
     void shouldReturnForbiddenWhenCreateOrganizationUnitWithClientRole() throws Exception {
         var requestDto = getMockOrganizationUnitDto();
 
-        mockMvc.perform(post("/api/v2/organizacao/unit")
+        mockMvc.perform(post("/api/v1/organizacao/unit")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isForbidden());
@@ -220,7 +220,7 @@ class OrganizationControllerIntegrationTest {
 
         when(service.update(any(OrganizationUpdateDto.class))).thenReturn(responseDto);
 
-        mockMvc.perform(put("/api/v2/organizacao")
+        mockMvc.perform(put("/api/v1/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
@@ -239,7 +239,7 @@ class OrganizationControllerIntegrationTest {
     void shouldReturnForbiddenWhenUpdateOrganizationWithClientRole() throws Exception {
         var requestDto = getMockOrganizationUpdateDto();
 
-        mockMvc.perform(put("/api/v2/organizacao")
+        mockMvc.perform(put("/api/v1/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isForbidden());
@@ -255,7 +255,7 @@ class OrganizationControllerIntegrationTest {
 
         when(service.update(any(OrganizationUnitUpdateDto.class))).thenReturn(responseDto);
 
-        mockMvc.perform(put("/api/v2/organizacao/unit")
+        mockMvc.perform(put("/api/v1/organizacao/unit")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
@@ -280,7 +280,7 @@ class OrganizationControllerIntegrationTest {
     void shouldReturnForbiddenWhenUpdateOrganizationUnitWithClientRole() throws Exception {
         var requestDto = getMockOrganizationUnitUpdateDto();
 
-        mockMvc.perform(put("/api/v2/organizacao/unit")
+        mockMvc.perform(put("/api/v1/organizacao/unit")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isForbidden());

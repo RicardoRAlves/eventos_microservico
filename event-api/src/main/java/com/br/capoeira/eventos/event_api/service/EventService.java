@@ -10,6 +10,7 @@ import com.br.capoeira.eventos.event_api.model.Event;
 import com.br.capoeira.eventos.event_api.producer.EventProducer;
 import com.br.capoeira.eventos.event_api.repository.CategoryRepository;
 import com.br.capoeira.eventos.event_api.repository.EventRepository;
+import com.br.capoeira.eventos.event_api.restClient.OrganizationClient;
 import com.br.capoeira.eventos.event_api.service.aws.S3Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class EventService {
     private final EventRepository repository;
     private final CategoryRepository categoryRepository;
     private final S3Service s3Service;
+    private final OrganizationClient organizationClient;
 
     public EventResponseDto sendingNewEventToProcessor(EventCreateRequestDto dto) {
         var event = eventMapper.createRequestDtoToEvent(dto);
@@ -66,27 +68,26 @@ public class EventService {
     }
 
     public EventResponseDto updateEvent(EventUpdateRequestDto dto) {
-        if (!repository.existsByTransactionId(dto.getTransactionId())) {
-            throw new ValidationException("Event not found");
-        }
+        var savedEvent = repository.findByTransactionId(dto.getTransactionId())
+                .orElseThrow(() -> new ValidationException("Event not found"));
 
-        var event = eventMapper.updateRequestDtoToEvent(dto);
+        eventMapper.updateRequestDtoToEvent(dto, savedEvent);
 
-        validateEvent(event);
+        validateEvent(savedEvent);
 
-        var category = findActiveCategoryByName(dto.getCategoryName());
+        var category = findActiveCategoryByName(savedEvent.getCategoryName());
 
         try {
-            log.info("Sending updated event to processor. transactionId={}", event.getTransactionId());
+            log.info("Sending updated event to processor. transactionId={}", savedEvent.getTransactionId());
 
-            repository.save(event);
-            var eventResponseDto = eventMapper.eventToResponseDto(event, category);
+            repository.save(savedEvent);
+            var eventResponseDto = eventMapper.eventToResponseDto(savedEvent, category);
             producer.sendingEventUpdatedToProcessor(eventResponseDto);
 
             return eventResponseDto;
         } catch (Exception e) {
             var errorMessage = "Error while trying to update event. transactionId=%s"
-                    .formatted(event.getTransactionId());
+                    .formatted(savedEvent.getTransactionId());
             log.error(errorMessage, e);
             throw new RuntimeException(errorMessage, e);
         }
@@ -178,21 +179,51 @@ public class EventService {
     private void validateScope(Event event) {
         switch (event.getScope()) {
             case PUBLIC -> {
+                if ((event.getOrganizationId() != null) &&
+                        (event.getOrganizationUnitId() != null)){
+                    validateOrganizationUnitBelongsToOrganization(
+                            event.getOrganizationId(),
+                            event.getOrganizationUnitId()
+                    );
+                }
             }
+
             case ORGANIZATION -> {
                 if (event.getOrganizationId() == null) {
-                    throw new ValidationException("Organization event must have organization informed");
+                    throw new ValidationException("Organization id must be informed");
+                }
+
+                if (event.getOrganizationUnitId() != null) {
+                    validateOrganizationUnitBelongsToOrganization(
+                            event.getOrganizationId(),
+                            event.getOrganizationUnitId()
+                    );
                 }
             }
+
             case ORGANIZATION_UNIT -> {
                 if (event.getOrganizationId() == null) {
-                    throw new ValidationException("Organization unit event must have organization informed");
+                    throw new ValidationException("Organization id must be informed");
                 }
+
                 if (event.getOrganizationUnitId() == null) {
-                    throw new ValidationException("Organization unit event must have organization unit informed");
+                    throw new ValidationException("Organization unit id must be informed");
                 }
+
+                validateOrganizationUnitBelongsToOrganization(
+                        event.getOrganizationId(),
+                        event.getOrganizationUnitId()
+                );
             }
+
             default -> throw new ValidationException("Invalid scope informed");
+        }
+    }
+
+    private void validateOrganizationUnitBelongsToOrganization(Long organizationId, Long organizationUnitId){
+        var dto = organizationClient.findUnitById(organizationUnitId);
+        if(!Objects.equals(organizationId, dto.getOrganizationId())){
+            throw new ValidationException("Organization id does not match the informed organization unit");
         }
     }
 }
