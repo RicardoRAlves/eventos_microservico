@@ -1,8 +1,8 @@
 package com.br.capoeira.eventos.notification.service;
 
+import com.br.capoeira.eventos.notification.dto.EventRequestDto;
+import com.br.capoeira.eventos.notification.dto.enums.Actions;
 import com.br.capoeira.eventos.notification.mapper.EventMapper;
-import com.br.capoeira.eventos.notification.model.Event;
-import com.br.capoeira.eventos.notification.model.enums.Actions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.*;
@@ -20,9 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FirebaseService {
 
-    private static final String COLLECTION_NAME = "events";
-    private static final String TOPIC = "event_updates";
-
+    private static final String COLLECTION_NAME = "events_v2";
     private static final String KEY_ACTION = "action";
     private static final String KEY_EVENT = "body";
 
@@ -30,19 +28,19 @@ public class FirebaseService {
     private final FirebaseMessaging firebaseMessaging;
     private final ObjectMapper objectMapper;
 
-    public void addEvent(Event event) {
+    public void addEvent(EventRequestDto event) {
         persistEvent(event, "added");
     }
 
-    public void updateEvent(Event event) {
+    public void updateEvent(EventRequestDto event) {
         persistEvent(event, "updated");
     }
 
-    public void addMultipleEventsBatch(List<Event> events) {
+    public void addMultipleEventsBatch(List<EventRequestDto> events) {
         try {
             WriteBatch batch = firestore.batch();
 
-            for (Event event : events) {
+            for (EventRequestDto event : events) {
                 var document = EventMapper.toDocument(event);
                 DocumentReference docRef = getDocumentReference(document.getTransactionId());
                 batch.set(docRef, document, SetOptions.merge());
@@ -61,7 +59,7 @@ public class FirebaseService {
         }
     }
 
-    private void persistEvent(Event event, String operation) {
+    private void persistEvent(EventRequestDto event, String operation) {
         try {
             var document = EventMapper.toDocument(event);
 
@@ -82,34 +80,22 @@ public class FirebaseService {
         return firestore.collection(COLLECTION_NAME).document(transactionId);
     }
 
-    public void sendEventNotification(Event event, Actions action) {
-        sendNotification(event, action);
-    }
-
-    public void sendEventsNotification(List<Event> events, Actions action) {
-        sendNotification(events, action);
-    }
-
-    private void sendNotification(Object payload, Actions action) {
+    public void sendEventNotification(Object payload, Actions action, String topic) {
         try {
-            Message message = buildMessage(FirebaseService.KEY_EVENT, payload, action);
+            Message message = Message.builder()
+                    .putData(KEY_ACTION, action.name())
+                    .putData(KEY_EVENT, toJson(payload))
+                    .setTopic(topic)
+                    .build();
 
             String response = firebaseMessaging.send(message);
 
-            log.info("Message sent to topic {} with action {}: {}", TOPIC, action, response);
+            log.info("Message sent to topic {} with action {}: {}", topic, action, response);
 
         } catch (FirebaseMessagingException e) {
-            log.error("Error sending message to topic {}: {}", TOPIC, e.getMessage(), e);
+            log.error("Error sending message to topic {}: {}", topic, e.getMessage(), e);
             throw new RuntimeException("Error sending Firebase notification", e);
         }
-    }
-
-    private Message buildMessage(String payloadKey, Object payload, Actions action) {
-        return Message.builder()
-                .putData(KEY_ACTION, action.name())
-                .putData(payloadKey, toJson(payload))
-                .setTopic(TOPIC)
-                .build();
     }
 
     private String toJson(Object payload) {

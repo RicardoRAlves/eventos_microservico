@@ -1,6 +1,6 @@
 package com.br.capoeira.eventos.notification.service;
 
-import com.br.capoeira.eventos.notification.model.Event;
+import com.br.capoeira.eventos.notification.dto.EventRequestDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.FirestoreOptions;
@@ -45,9 +45,11 @@ class FirebaseServiceIntegrationTest {
     @MockitoBean
     private FirebaseMessaging firebaseMessaging;
 
+    private final String events_collection = "events_v2";
+
     @AfterEach
     void cleanUp() throws Exception {
-        firestore.collection("events")
+        firestore.collection(events_collection)
                 .listDocuments()
                 .forEach(doc -> {
                     try {
@@ -60,13 +62,13 @@ class FirebaseServiceIntegrationTest {
 
     @Test
     void shouldAddEventOnFirestore() throws Exception {
-        Event event = new Event();
+        var event = new EventRequestDto();
         event.setTransactionId("tx-123");
         event.setTitle("Evento integração");
 
         firebaseService.addEvent(event);
 
-        var snapshot = firestore.collection("events")
+        var snapshot = firestore.collection(events_collection)
                 .document("tx-123")
                 .get()
                 .get();

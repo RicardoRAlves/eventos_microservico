@@ -1,17 +1,20 @@
 package com.br.capoeira.eventos.notification.mapper;
 
-import com.br.capoeira.eventos.notification.model.Event;
-import com.br.capoeira.eventos.notification.model.EventDocument;
+import com.br.capoeira.eventos.notification.dto.EventDocument;
+import com.br.capoeira.eventos.notification.dto.EventRequestDto;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 
-public class EventMapper {
+public final class EventMapper {
 
     private static final ZoneId ZONE_ID = ZoneId.of("America/Sao_Paulo");
 
-    public static EventDocument toDocument(Event event) {
+    private EventMapper() {
+    }
+
+    public static EventDocument toDocument(EventRequestDto event) {
         EventDocument doc = new EventDocument();
         doc.setId(event.getId());
         doc.setTransactionId(event.getTransactionId());
@@ -24,6 +27,10 @@ public class EventMapper {
         doc.setTypeContact(event.getTypeContact());
         doc.setContact(event.getContact());
         doc.setImage(event.getImage());
+        doc.setCategoryName(event.getCategoryName());
+        doc.setScope(event.getScope());
+        doc.setOrganizationId(event.getOrganizationId());
+        doc.setOrganizationUnitId(event.getOrganizationUnitId());
         doc.setActive(event.getActive());
         return doc;
     }

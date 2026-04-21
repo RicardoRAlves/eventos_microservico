@@ -1,111 +1,178 @@
-# events_microservice
+# 🥋 Event Manager - Microservices Architecture
 
-This project is an event-driven microservices architecture designed to manage Capoeira events.
-
-It is composed of multiple Spring Boot services that communicate asynchronously using RabbitMQ, and integrate with external services such as AWS S3 and Firebase.
+A scalable **event-driven microservices platform** designed to manage Capoeira events across organizations and units, with real-time notifications and distributed data synchronization.
 
 ---
 
-## 🧩 Architecture Overview
+## 🚀 Overview
 
-The system is composed of the following microservices:
+This project demonstrates a **real-world backend architecture** built with:
+
+* Event-driven communication (RabbitMQ)
+* Multi-tenant design (organization + unit)
+* Real-time updates (Firebase Cloud Messaging)
+* Distributed data synchronization (Full Sync strategy)
+
+It was designed to solve a common problem:
+
+> How to reliably deliver and synchronize event data across multiple users and devices in a scalable way.
 
 ---
 
-### 👤 User API (Authentication Service)
+## 🧠 Key Concepts
 
-* Responsible for user management and authentication
-* Generates JWT tokens used across the system
-* Defines user roles (e.g., `ADMIN`, `CLIENT`)
-* Injects claims into JWT:
+* **Event-driven architecture**
+* **Topic-based notification (FCM)**
+* **Multi-tenant isolation**
+* **Eventual consistency**
+* **Scoped data synchronization (GET_ALL)**
 
-    * `roles`
-    * `userId`
-    * `organizationId` (optional)
+---
 
-🔐 This API is the **entry point for authentication**
+## 🧩 Microservices Architecture
+
+### 👤 User API
+
+* Authentication & authorization (JWT)
+* User management
+* Organization association via `joinCode`
 
 ---
 
 ### 📌 Event API
 
-* Receives requests via REST endpoints to create new events
-* Uploads event-related data (e.g., images) to AWS S3
-* Sends messages to RabbitMQ to trigger event processing
-* Can request all events to be sent to clients (Android)
+* Entry point for event creation
+* Validates business rules
+* Uploads assets (AWS S3)
+* Publishes events to RabbitMQ
 
 ---
 
-### ⚙️ Processor API (Event Database API)
+### ⚙️ Processor API
 
-* Consumes messages from RabbitMQ
-* Persists events into PostgreSQL
-* Publishes messages to notify clients about new or updated events
+* Consumes events from RabbitMQ
+* Persists data in PostgreSQL
+* Acts as the **source of truth**
 
 ---
 
 ### 🔔 Notification API
 
-* Receives event payloads
-* Sends push notifications to Android clients using Firebase (FCM)
-
-> ⚠️ If running locally via IntelliJ, you may need to add VM options:
-
-```
---add-opens java.base/java.time.chrono=ALL-UNNAMED
---add-opens java.base/java.time.format=ALL-UNNAMED
---add-opens java.base/java.time.temporal=ALL-UNNAMED
---add-opens java.base/java.time.zone=ALL-UNNAMED
-```
+* Integrates with Firebase (FCM + Firestore)
+* Resolves delivery topics
+* Sends real-time notifications
+* Handles full sync (`GET_ALL`)
 
 ---
 
 ### 🏢 Organization API
 
-* Manages organizations and their units (e.g., Capoeira groups)
-* Provides CRUD operations
-* Uses PostgreSQL as its data source
-* Protected by JWT authentication
-* Uses role-based authorization:
+* Manages organizations and units
+* Generates and validates `joinCode`
+* Provides multi-tenant structure
 
-    * `ADMIN` → create/update organizations and units
-    * `CLIENT` → read-only access
+---
+
+## 🔄 Architecture Flow
+
+```text
+Client → Event API → RabbitMQ → Processor API → Notification API → FCM → Mobile App
+```
+
+---
+
+## 🔔 Notification & Sync Strategy
+
+### Topic-Based Delivery
+
+| Scope        | Topic                       |
+| ------------ | --------------------------- |
+| PUBLIC       | `public`                    |
+| ORGANIZATION | `org_<organizationId>`      |
+| UNIT         | `unit_<organizationUnitId>` |
+
+---
+
+### Example
+
+A user from:
+
+* organization `1`
+* unit `10`
+
+Receives events from:
+
+* `public`
+* `org_1`
+* `unit_10`
+
+---
+
+## 🔄 Full Sync (Data Reconciliation)
+
+The system implements a **scope-based full sync strategy**:
+
+* Fixes inconsistencies across devices
+* Avoids global data overwrite
+* Ensures tenant isolation
+
+👉 See:
+`/docs/flows/full-sync-flow.md`
+
+---
+
+## 📊 Documentation
+
+Detailed architecture and business rules are documented:
+
+### 📁 Architecture
+
+* `docs/architecture/overview.md`
+* `docs/architecture/integrations.md`
+
+### 📁 Business Rules
+
+* `docs/business-rules/event-api.md`
+* `docs/business-rules/processor-api.md`
+* `docs/business-rules/notification-api.md`
+* `docs/business-rules/user-api.md`
+* `docs/business-rules/organization-api.md`
+
+### 📁 Flows
+
+* `docs/flows/notification-flow.md`
+* `docs/flows/full-sync-flow.md`
 
 ---
 
 ## 🔐 Authentication & Authorization
 
-Authentication is centralized in the **User API**, while authorization is enforced across services.
+Authentication is centralized in **User API** using JWT.
 
-### 🔑 JWT Example
+### Example Token
 
 ```json
 {
   "sub": "user@email.com",
   "roles": ["ADMIN"],
   "userId": 1,
-  "organizationId": 10
+  "organizationId": 10,
+  "organizationUnitId": 5
 }
 ```
 
-### 🔄 Security Flow
+### Flow
 
-1. Client authenticates via **User API**
-2. Receives JWT token
-3. Sends token in requests:
-
-```
-Authorization: Bearer <token>
-```
-
-4. Other APIs validate the token
-5. Access is controlled via roles (`@PreAuthorize`)
+1. User logs in via User API
+2. Receives JWT
+3. Sends token in requests
+4. Services validate and enforce roles
 
 ---
 
-## 📡 Example Requests
+## 📡 Example Request
 
-### 🔐 Login (User API)
+### Login
 
 ```bash
 curl -X POST http://localhost:8082/api/v1/auth/login \
@@ -116,84 +183,42 @@ curl -X POST http://localhost:8082/api/v1/auth/login \
   }'
 ```
 
-Response:
+---
 
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-}
-```
+## 🗄️ Data Storage
+
+* **PostgreSQL** → main data (processor + organization)
+* **MongoDB** → event-api support
+* **Firestore** → event snapshot layer
+* **AWS S3** → file storage
 
 ---
 
-### 🏢 Create Organization (ADMIN only)
+## 📡 Messaging
 
-```bash
-curl -X POST http://localhost:8081/api/v1/organizacao \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Capoeira Bonfim",
-    "slug": "bonfim",
-    "description": "Grupo de capoeira",
-    "logoUrl": "http://image.com/logo.png",
-    "active": true,
-    "mainUnit": {
-      "name": "Matriz",
-      "city": "São Paulo",
-      "country": "Brasil"
-    }
-  }'
-```
+* RabbitMQ for async communication
+* Decoupled services
+* Scalable event propagation
 
 ---
 
-### 📖 Get Organization (Authenticated)
+## 📊 Diagrams
 
-```bash
-curl -X GET http://localhost:8081/api/v1/organizacao/1 \
-  -H "Authorization: Bearer <token>"
-```
+### Architecture
 
----
-
-### ❌ Forbidden Example (CLIENT trying ADMIN endpoint)
-
-Response:
-
-```json
-{
-  "status": 403,
-  "error": "Forbidden"
-}
-```
+![Architecture](./docs/assets/diagram.png)
 
 ---
 
-## 🗄️ Databases
+### RabbitMQ Flow
 
-* **MongoDB** → Event API
-* **PostgreSQL** → Processor API & Organization API
-* **AWS S3** → File storage
+![RabbitMQ](./docs/assets/diagramRabbitMq.png)
 
 ---
 
-## 🔄 Messaging
+### Notification Flow
 
-* RabbitMQ is used for asynchronous communication
-* Enables decoupling and scalability
-
----
-
-## 📊 Architecture Diagram
-
-![diagram.png](diagram.png)
-
----
-
-## 📨 RabbitMQ Flow
-
-![diagramRabbitMq.png](diagramRabbitMq.png)
+![Notification Flow](./docs/assets/notification-flow.png)
 
 ---
 
@@ -205,66 +230,61 @@ docker compose up --build -d
 
 ---
 
-## 🌐 API Documentation (Swagger)
+## 🌐 Swagger
 
-* Event API
-  http://localhost:8080/swagger-ui/index.html
-
-* Organization API
-  http://localhost:8081/swagger-ui/index.html
-
-* User API
-  http://localhost:8082/swagger-ui/index.html
+* Event API → http://localhost:8080/swagger-ui/index.html
+* Organization API → http://localhost:8081/swagger-ui/index.html
+* User API → http://localhost:8082/swagger-ui/index.html
 
 ---
 
-## 🐇 RabbitMQ Management
+## 🐇 RabbitMQ
 
 http://localhost:15672/
 
-Credentials:
-
-* username: rabbitmq
-* password: rabbitmq
+```
+username: rabbitmq
+password: rabbitmq
+```
 
 ---
 
 ## 🧠 Tech Stack
 
-* Java / Spring Boot
+* Java 17 + Spring Boot
 * Spring Security (JWT)
-* Docker / Docker Compose
 * RabbitMQ
 * PostgreSQL
 * MongoDB
+* Firebase (FCM + Firestore)
 * AWS S3
-* Firebase Cloud Messaging (FCM)
+* Docker
 
 ---
 
-## 📌 Notes
+## 💡 Highlights (Why this project matters)
 
-* Each microservice has its own database
-* Communication is asynchronous via RabbitMQ
-* Authentication is centralized (User API)
-* Authorization is role-based (JWT)
-* Designed for scalability and decoupling
+* Real-world microservices architecture
+* Event-driven communication
+* Scalable notification system (FCM topics)
+* Multi-tenant data isolation
+* Distributed sync strategy (advanced topic)
 
 ---
 
 ## 🚀 Future Improvements
 
 * API Gateway (Spring Cloud Gateway)
-* Centralized logging (ELK / Grafana)
 * Observability (OpenTelemetry)
+* Centralized logging (ELK)
 * CI/CD pipeline
-* Rate limiting & security hardening
+* Rate limiting
 
 ---
 
 ## 👨‍💻 Author
 
-Ricardo Rodrigues Alves
+**Ricardo Rodrigues Alves**
 Backend Developer | Java | Microservices | Android
 
 ---

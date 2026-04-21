@@ -1,4 +1,4 @@
-package com.br.capoeira.eventos.notification.model.enums;
+package com.br.capoeira.eventos.notification.dto.enums;
 
 public enum Actions {
     CREATE,
