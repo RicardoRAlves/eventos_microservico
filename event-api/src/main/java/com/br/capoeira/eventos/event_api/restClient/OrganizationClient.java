@@ -1,15 +1,17 @@
 package com.br.capoeira.eventos.event_api.restClient;
 
+import com.br.capoeira.eventos.event_api.config.exception.ServiceUnavailableException;
 import com.br.capoeira.eventos.event_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.event_api.dto.OrganizationResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestClient;
+
 
 @Component
 @RequiredArgsConstructor
@@ -24,14 +26,17 @@ public class OrganizationClient {
         try {
             var authentication = SecurityContextHolder.getContext().getAuthentication();
 
-            String token = null;
-            if (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken) {
-                token = jwtAuthenticationToken.getToken().getTokenValue();
-            }
+            final String finalToken = (authentication instanceof JwtAuthenticationToken jwtAuthenticationToken)
+                    ? jwtAuthenticationToken.getToken().getTokenValue()
+                    : null;
 
             return restClient.get()
                     .uri(endpoint + "{organizationUnitId}", organizationUnitId)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .headers(headers -> {
+                        if (finalToken != null) {
+                            headers.setBearerAuth(finalToken);
+                        }
+                    })
                     .retrieve()
                     .onStatus(
                             status -> status.value() == 404,
@@ -46,7 +51,7 @@ public class OrganizationClient {
                             }
                     )
                     .onStatus(
-                            status -> status.is4xxClientError() || status.is5xxServerError(),
+                            HttpStatusCode::is4xxClientError,
                             (request, response) -> {
                                 throw new ValidationException(
                                         "Error validating Organization Unit Id. HTTP status: "
@@ -54,9 +59,16 @@ public class OrganizationClient {
                                 );
                             }
                     )
+                    .onStatus(
+                            HttpStatusCode::is5xxServerError,
+                            (request, response) -> {
+                                throw new ServiceUnavailableException("Organization service is unavailable");
+                            }
+                    )
                     .body(OrganizationResponseDto.class);
+
         } catch (ResourceAccessException ex) {
-            throw new ValidationException("Organization service is unavailable");
+            throw new ServiceUnavailableException("Organization service is unavailable");
         }
     }
 }
