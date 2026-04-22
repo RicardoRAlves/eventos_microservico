@@ -29,8 +29,10 @@ import static unit.com.br.capoeira.eventos.event_api.utils.MockUtils.getMockEven
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.MOCK,
         properties = {
-                "security.jwt.secret=U2VncmVkby1NdWl0by1Gb3J0ZS1QYXJhLU9zLVRlc3Rlcy1Db20tMzItQnl0ZXM="
-        })
+                "security.jwt.secret=U2VncmVkby1NdWl0by1Gb3J0ZS1QYXJhLU9zLVRlc3Rlcy1Db20tMzItQnl0ZXM=",
+                "organization.api.url.base=http://localhost:8081"
+        }
+)
 @Testcontainers
 class EventErrorListenerIntegrationTest {
 
@@ -42,6 +44,8 @@ class EventErrorListenerIntegrationTest {
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("spring.rabbitmq.host", rabbitMQ::getHost);
         registry.add("spring.rabbitmq.port", rabbitMQ::getAmqpPort);
+        registry.add("spring.rabbitmq.username", rabbitMQ::getAdminUsername);
+        registry.add("spring.rabbitmq.password", rabbitMQ::getAdminPassword);
     }
 
     @Value("${rabbitmq.create.error.queue.name}")

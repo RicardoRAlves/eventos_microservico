@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.messaging.FirebaseMessaging;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -15,6 +16,7 @@ import java.io.IOException;
 
 @Slf4j
 @Configuration
+@ConditionalOnProperty(name = "firebase.enabled", havingValue = "true", matchIfMissing = true)
 public class FirebaseConfig {
 
     private static final String CONFIG_NAME = "firebase_config.json";
@@ -28,15 +30,14 @@ public class FirebaseConfig {
                 throw new IOException("Resource File not found");
             }
 
-            var serviceAccount = resource.getInputStream();
+            try (var serviceAccount = resource.getInputStream()) {
+                var options = FirebaseOptions.builder()
+                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+                        .build();
 
-            var options = FirebaseOptions.builder()
-                    .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                    .build();
-
-            FirebaseApp.initializeApp(options);
-            log.info("Firebase Admin SDK initialized!!.");
-            serviceAccount.close();
+                FirebaseApp.initializeApp(options);
+                log.info("Firebase Admin SDK initialized!!.");
+            }
         }
     }
 
