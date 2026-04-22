@@ -50,11 +50,11 @@ services:
       timeout: 5s
       retries: 5
 
-  event_api:
+  event-api:
     build:
       context: ./event-api
       dockerfile: Dockerfile
-    container_name: event_api
+    container_name: event-api
     ports:
       - "8080:8080"
     env_file:
@@ -73,14 +73,14 @@ services:
       MONGO_PASS: 123456
       MONGO_HOST: event-mongo-db
       MONGO_DB: admin
-      ORGANIZATION_API_URL_BASE: http://organization_api:8081
+      ORGANIZATION_API_URL_BASE: http://organization-api:8081
       ORGANIZATION_API_URL_ENDPOINT: /api/v1/organizacao/unit/
 
-  processor_api:
+  processor-api:
     build:
       context: ./processor_api
       dockerfile: Dockerfile
-    container_name: processor_api
+    container_name: processor-api
     depends_on:
       postgres:
         condition: service_healthy
@@ -97,11 +97,11 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
 
-  notification_api:
+  notification-api:
     build:
       context: ./notification-api
       dockerfile: Dockerfile
-    container_name: notification_api
+    container_name: notification-api
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -116,11 +116,11 @@ services:
         --add-opens java.base/java.time.temporal=ALL-UNNAMED
         --add-opens java.base/java.time.zone=ALL-UNNAMED
 
-  organization_api:
+  organization-api:
     build:
       context: ./organization_api
       dockerfile: Dockerfile
-    container_name: organization_api
+    container_name: organization-api
     ports:
       - "8081:8081"
     env_file:
@@ -135,11 +135,11 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
 
-  user_api:
+  user-api:
     build:
       context: ./user_api
       dockerfile: Dockerfile
-    container_name: user_api
+    container_name: user-api
     ports:
       - "8082:8082"
     env_file:
@@ -153,6 +153,8 @@ services:
       DB_NAME: user_api
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
+      ORGANIZATION_API_URL_BASE: http://organization-api:8081
+      ORGANIZATION_API_URL_ENDPOINT: /api/v1/organizacao/unit/code/
 
 volumes:
   rabbitmq_data:
