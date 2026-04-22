@@ -15,10 +15,12 @@ import java.util.stream.Collectors;
 public class GlobalHandlerException {
 
     @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<StandardException> validation(ValidationException e, HttpServletRequest request) {
-
+    public ResponseEntity<StandardException> handleValidationException(
+            ValidationException e,
+            HttpServletRequest request
+    ) {
         HttpStatus status = e.getMessage() != null &&
-                e.getMessage().contains("not found")
+                e.getMessage().toLowerCase().contains("not found")
                 ? HttpStatus.NOT_FOUND
                 : HttpStatus.BAD_REQUEST;
 
@@ -34,10 +36,12 @@ public class GlobalHandlerException {
     }
 
     @ExceptionHandler(FileException.class)
-    public ResponseEntity<StandardException> validation(FileException e, HttpServletRequest request) {
-
+    public ResponseEntity<StandardException> handleFileException(
+            FileException e,
+            HttpServletRequest request
+    ) {
         HttpStatus status = e.getMessage() != null &&
-                e.getMessage().contains("not found")
+                e.getMessage().toLowerCase().contains("not found")
                 ? HttpStatus.NOT_FOUND
                 : HttpStatus.BAD_REQUEST;
 
@@ -52,11 +56,27 @@ public class GlobalHandlerException {
         return ResponseEntity.status(status).body(err);
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<StandardException> methodArgumentNotValid(
-            MethodArgumentNotValidException e,
-            HttpServletRequest request) {
+    @ExceptionHandler(ServiceUnavailableException.class)
+    public ResponseEntity<StandardException> handleServiceUnavailableException(
+            ServiceUnavailableException e,
+            HttpServletRequest request
+    ) {
+        var err = new StandardException(
+                System.currentTimeMillis(),
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "External service unavailable",
+                e.getMessage(),
+                request.getRequestURI()
+        );
 
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(err);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<StandardException> handleMethodArgumentNotValid(
+            MethodArgumentNotValidException e,
+            HttpServletRequest request
+    ) {
         String message = e.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -77,17 +97,33 @@ public class GlobalHandlerException {
 
     @ExceptionHandler(MissingServletRequestPartException.class)
     public ResponseEntity<StandardException> handleMissingServletRequestPartException(
-            MissingServletRequestPartException ex,
+            MissingServletRequestPartException e,
             HttpServletRequest request
     ) {
-        StandardException error = new StandardException(
+        var err = new StandardException(
                 System.currentTimeMillis(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Image file is required",
-                ex.getMessage(),
+                e.getMessage(),
                 request.getRequestURI()
         );
 
-        return ResponseEntity.badRequest().body(error);
+        return ResponseEntity.badRequest().body(err);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<StandardException> handleGenericException(
+            Exception e,
+            HttpServletRequest request
+    ) {
+        var err = new StandardException(
+                System.currentTimeMillis(),
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Unexpected internal error",
+                e.getMessage() != null ? e.getMessage() : "Unexpected error",
+                request.getRequestURI()
+        );
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(err);
     }
 }

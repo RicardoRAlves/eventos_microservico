@@ -206,19 +206,12 @@ curl -X POST http://localhost:8082/api/v1/auth/login \
 
 ### Architecture
 
-![Architecture](./docs/assets/diagram.png)
+![Architecture](./docs/images/architecture-diagram.png)
 
 ---
-
-### RabbitMQ Flow
-
-![RabbitMQ](./docs/assets/diagramRabbitMq.png)
-
----
-
 ### Notification Flow
 
-![Notification Flow](./docs/assets/notification-flow.png)
+![Notification Flow](./docs/images/notification-flow.png)
 
 ---
 
