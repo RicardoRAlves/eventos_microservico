@@ -262,8 +262,12 @@ class EventServiceTest {
     void whenDateFinishedIsLessEqualToStartedShouldNotSaveNewEvent() {
         var requestDto = getMockEventCreateRequestDto();
         var event = getMockEvent();
-        event.setDateStarted(LocalDateTime.now());
-        event.setDateFinished(LocalDateTime.now());
+
+        var started = LocalDateTime.of(2026, 5, 10, 19, 0, 0);
+        var finished = LocalDateTime.of(2026, 5, 10, 18, 0, 0);
+
+        event.setDateStarted(started);
+        event.setDateFinished(finished);
 
         when(eventMapper.createRequestDtoToEvent(any(EventCreateRequestDto.class))).thenReturn(event);
 
