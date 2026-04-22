@@ -6,7 +6,7 @@
 # separate terms of service, privacy policy, and support
 # documentation.
 
-name: Java CI with Maven
+name: Event Microservice
 
 on:
   push:
@@ -15,21 +15,102 @@ on:
     branches: [ "master", "develop" ]
 
 jobs:
-  build:
-
+  build-event-api:
     runs-on: ubuntu-latest
-
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: maven
-    - name: Give permission for Maven
-      run: chmod +x mvnw
-      
-    - name: Build tests
-      run: ./mvnw clean verify --no-transfer-progress      
+      - uses: actions/checkout@v4
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Give permission for Maven
+        run: chmod +x mvnw
+        working-directory: ./event_api
+
+      - name: Build tests
+        run: ./mvnw clean verify --no-transfer-progress
+        working-directory: ./event_api
+
+  build-user-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Give permission for Maven
+        run: chmod +x mvnw
+        working-directory: ./user_api
+
+      - name: Build tests
+        run: ./mvnw clean verify --no-transfer-progress
+        working-directory: ./user_api
+
+  build-organization-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Give permission for Maven
+        run: chmod +x mvnw
+        working-directory: ./organization_api
+
+      - name: Build tests
+        run: ./mvnw clean verify --no-transfer-progress
+        working-directory: ./organization_api
+
+  build-processor-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Give permission for Maven
+        run: chmod +x mvnw
+        working-directory: ./processor_api
+
+      - name: Build tests
+        run: ./mvnw clean verify --no-transfer-progress
+        working-directory: ./processor_api
+
+  build-notification-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Give permission for Maven
+        run: chmod +x mvnw
+        working-directory: ./notification_api
+
+      - name: Build tests
+        run: ./mvnw clean verify --no-transfer-progress
+        working-directory: ./notification_api
