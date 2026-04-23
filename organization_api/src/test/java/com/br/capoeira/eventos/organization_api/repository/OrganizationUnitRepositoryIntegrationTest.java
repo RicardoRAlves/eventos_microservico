@@ -4,6 +4,7 @@ import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -94,12 +95,21 @@ public class OrganizationUnitRepositoryIntegrationTest {
         organizationUnitRepository.save(unit1);
         organizationUnitRepository.save(unit2);
 
-        var result = organizationUnitRepository.findAllByOrganization_IdOrderByIdAsc(savedOrganization.getId());
+        var result = organizationUnitRepository.findAllByOrganization_IdOrderByIdAsc(
+                savedOrganization.getId(),
+                PageRequest.of(0, 10)
+        );
 
-        assertThat(result).hasSize(2);
-        assertThat(result)
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent())
                 .extracting(OrganizationUnit::getName)
-                .contains("Bonfim Jundiaí", "Bonfim Passos");
+                .containsExactly("Bonfim Jundiaí", "Bonfim Passos");
+        assertThat(result.getNumber()).isZero();
+        assertThat(result.getSize()).isEqualTo(10);
+        assertThat(result.getTotalElements()).isEqualTo(2);
+        assertThat(result.getTotalPages()).isEqualTo(1);
+        assertThat(result.isLast()).isTrue();
     }
 
     @Test

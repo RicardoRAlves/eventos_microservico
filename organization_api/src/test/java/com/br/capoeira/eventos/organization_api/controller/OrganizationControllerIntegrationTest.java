@@ -2,10 +2,7 @@ package com.br.capoeira.eventos.organization_api.controller;
 
 import com.br.capoeira.eventos.organization_api.config.SecurityConfig;
 import com.br.capoeira.eventos.organization_api.config.exception.GlobalHandlerException;
-import com.br.capoeira.eventos.organization_api.dto.OrganizationCreateRequestDto;
-import com.br.capoeira.eventos.organization_api.dto.OrganizationUnitDto;
-import com.br.capoeira.eventos.organization_api.dto.OrganizationUnitUpdateDto;
-import com.br.capoeira.eventos.organization_api.dto.OrganizationUpdateDto;
+import com.br.capoeira.eventos.organization_api.dto.*;
 import com.br.capoeira.eventos.organization_api.service.OrganizationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -105,35 +102,53 @@ class OrganizationControllerIntegrationTest {
     void shouldFindAllOrganizationUnitsByOrganizationId() throws Exception {
         var responseDto = getMockOrganizationUnitResponseDto();
 
-        when(service.findAllByOrganizationId(1L)).thenReturn(List.of(responseDto));
+        var response = new PageResponseDto<>(
+                List.of(responseDto),
+                0,
+                10,
+                1L,
+                1,
+                true
+        );
+
+        when(service.findAllByOrganizationId(1L, 0, 10)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/organizacao/unit/all/1")
+                        .param("page", "0")
+                        .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(responseDto.getId()))
-                .andExpect(jsonPath("$[0].organizationId").value(responseDto.getOrganizationId()))
-                .andExpect(jsonPath("$[0].name").value(responseDto.getName()))
-                .andExpect(jsonPath("$[0].slug").value(responseDto.getSlug()))
-                .andExpect(jsonPath("$[0].description").value(responseDto.getDescription()))
-                .andExpect(jsonPath("$[0].city").value(responseDto.getCity()))
-                .andExpect(jsonPath("$[0].state").value(responseDto.getState()))
-                .andExpect(jsonPath("$[0].country").value(responseDto.getCountry()))
-                .andExpect(jsonPath("$[0].address").value(responseDto.getAddress()))
-                .andExpect(jsonPath("$[0].contactPhone").value(responseDto.getContactPhone()))
-                .andExpect(jsonPath("$[0].contactEmail").value(responseDto.getContactEmail()))
-                .andExpect(jsonPath("$[0].active").value(responseDto.getActive()));
+                .andExpect(jsonPath("$.content[0].id").value(responseDto.getId()))
+                .andExpect(jsonPath("$.content[0].organizationId").value(responseDto.getOrganizationId()))
+                .andExpect(jsonPath("$.content[0].name").value(responseDto.getName()))
+                .andExpect(jsonPath("$.content[0].slug").value(responseDto.getSlug()))
+                .andExpect(jsonPath("$.content[0].description").value(responseDto.getDescription()))
+                .andExpect(jsonPath("$.content[0].city").value(responseDto.getCity()))
+                .andExpect(jsonPath("$.content[0].state").value(responseDto.getState()))
+                .andExpect(jsonPath("$.content[0].country").value(responseDto.getCountry()))
+                .andExpect(jsonPath("$.content[0].address").value(responseDto.getAddress()))
+                .andExpect(jsonPath("$.content[0].contactPhone").value(responseDto.getContactPhone()))
+                .andExpect(jsonPath("$.content[0].contactEmail").value(responseDto.getContactEmail()))
+                .andExpect(jsonPath("$.content[0].active").value(responseDto.getActive()))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.last").value(true));
 
-        verify(service).findAllByOrganizationId(1L);
+        verify(service).findAllByOrganizationId(1L, 0, 10);
     }
 
     @Test
     @WithMockUser(roles = "CLIENT")
     void shouldReturnForbiddenWhenFindAllOrganizationUnitsByOrganizationIdWithClientRole() throws Exception {
         mockMvc.perform(get("/api/v1/organizacao/unit/all/1")
+                        .param("page", "0")
+                        .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
 
-        verify(service, never()).findAllByOrganizationId(anyLong());
+        verifyNoInteractions(service);
     }
 
     @Test

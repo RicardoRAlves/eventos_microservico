@@ -4,13 +4,15 @@ import com.br.capoeira.eventos.event_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.event_api.dto.CategoryCreateRequestDto;
 import com.br.capoeira.eventos.event_api.dto.CategoryResponseDto;
 import com.br.capoeira.eventos.event_api.dto.CategoryUpdateRequestDto;
+import com.br.capoeira.eventos.event_api.dto.PageResponseDto;
 import com.br.capoeira.eventos.event_api.mapper.CategoryMapper;
 import com.br.capoeira.eventos.event_api.repository.CategoryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Objects;
 
 @Slf4j
@@ -21,11 +23,22 @@ public class CategoryService {
     private final CategoryRepository repository;
     private final CategoryMapper mapper;
 
-    public List<CategoryResponseDto> findAll() {
-        return repository.findAll()
+    public PageResponseDto<CategoryResponseDto> findAll(int page, int size) {
+
+        var pageable = PageRequest.of(page, size, Sort.by("id").ascending());
+        var categoryPage = repository.findAll(pageable);
+        var content = categoryPage
                 .stream()
                 .map(mapper::categoryToResponseDto)
                 .toList();
+        return new PageResponseDto<>(
+                content,
+                categoryPage.getNumber(),
+                categoryPage.getSize(),
+                categoryPage.getTotalElements(),
+                categoryPage.getTotalPages(),
+                categoryPage.isLast()
+        );
     }
 
     public CategoryResponseDto findById(Long id) {

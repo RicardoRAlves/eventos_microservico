@@ -15,8 +15,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/users")
@@ -35,19 +33,24 @@ public class UserController {
 
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/organization/{organizationId}")
-    public ResponseEntity<List<UserResponseDto>> findAllByOrganizationId(
-            @PathVariable Long organizationId) {
+    public ResponseEntity<PageResponseDto<UserResponseDto>> findAllByOrganizationId(
+            @PathVariable Long organizationId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+            ) {
         log.info("Finding all users by organization id {}", organizationId);
-        var response = service.findAllByOrganizationId(organizationId);
+        var response = service.findAllByOrganizationId(organizationId, page, size);
         return ResponseEntity.ok(response);
     }
 
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/organization-unit/{organizationUnitId}")
-    public ResponseEntity<List<UserResponseDto>> findAllByOrganizationUnitId(
-            @PathVariable Long organizationUnitId) {
+    public ResponseEntity<PageResponseDto<UserResponseDto>> findAllByOrganizationUnitId(
+            @PathVariable Long organizationUnitId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
         log.info("Finding all users by organization unit id {}", organizationUnitId);
-        var response = service.findAllByOrganizationUnitId(organizationUnitId);
+        var response = service.findAllByOrganizationUnitId(organizationUnitId, page, size);
         return ResponseEntity.ok(response);
     }
 

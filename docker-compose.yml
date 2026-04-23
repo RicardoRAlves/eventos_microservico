@@ -52,7 +52,7 @@ services:
 
   event-api:
     build:
-      context: ./event-api
+      context: ./event_api
       dockerfile: Dockerfile
     container_name: event-api
     ports:
@@ -99,7 +99,7 @@ services:
 
   notification-api:
     build:
-      context: ./notification-api
+      context: ./notification_api
       dockerfile: Dockerfile
     container_name: notification-api
     depends_on:

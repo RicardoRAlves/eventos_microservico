@@ -13,6 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -36,18 +40,26 @@ public class CategoryServiceTest {
         var category = getMockCategory(1L, "Capoeira", true);
         var responseDto = getMockCategoryResponseDto(1L, "Capoeira", true);
 
-        when(repository.findAll()).thenReturn(List.of(category));
+        var categoryPage = new PageImpl<>(
+                List.of(category),
+                PageRequest.of(0, 10, Sort.by("id").ascending()),
+                1
+        );
+
+        when(repository.findAll(any(Pageable.class))).thenReturn(categoryPage);
         when(mapper.categoryToResponseDto(category)).thenReturn(responseDto);
 
-        var response = service.findAll();
+        var response = service.findAll(0, 10);
 
         assertNotNull(response);
-        assertEquals(1, response.size());
-        assertEquals(responseDto.getId(), response.get(0).getId());
-        assertEquals(responseDto.getName(), response.get(0).getName());
-        assertEquals(responseDto.getActive(), response.get(0).getActive());
+        assertEquals(1, response.getContent().size());
+        assertEquals(responseDto.getId(), response.getContent().get(0).getId());
+        assertEquals(responseDto.getName(), response.getContent().get(0).getName());
+        assertEquals(responseDto.getActive(), response.getContent().get(0).getActive());
+        assertEquals(1L, response.getTotalElements());
+        assertEquals(1, response.getTotalPages());
 
-        verify(repository).findAll();
+        verify(repository).findAll(any(Pageable.class));
         verify(mapper).categoryToResponseDto(category);
     }
 

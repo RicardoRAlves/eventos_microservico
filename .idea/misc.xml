@@ -12,6 +12,8 @@
         <option value="$PROJECT_DIR$/processor_api/pom.xml" />
         <option value="$PROJECT_DIR$/organization_api/pom.xml" />
         <option value="$PROJECT_DIR$/user_api/pom.xml" />
+        <option value="$PROJECT_DIR$/event_api/pom.xml" />
+        <option value="$PROJECT_DIR$/notification_api/pom.xml" />
       </list>
     </option>
   </component>

@@ -29,11 +29,11 @@ jobs:
 
       - name: Give permission for Maven
         run: chmod +x mvnw
-        working-directory: ./event-api
+        working-directory: ./event_api
 
       - name: Build tests
         run: ./mvnw clean verify --no-transfer-progress
-        working-directory: ./event-api
+        working-directory: ./event_api
 
   build-user-api:
     runs-on: ubuntu-latest
@@ -109,8 +109,8 @@ jobs:
 
       - name: Give permission for Maven
         run: chmod +x mvnw
-        working-directory: ./notification-api
+        working-directory: ./notification_api
 
       - name: Build tests
         run: ./mvnw clean verify --no-transfer-progress
-        working-directory: ./notification-api
+        working-directory: ./notification_api

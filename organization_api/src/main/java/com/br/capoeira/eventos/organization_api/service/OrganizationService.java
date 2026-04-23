@@ -8,6 +8,8 @@ import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationRepository;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationUnitRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -48,15 +50,30 @@ public class OrganizationService {
                 .orElseThrow(() -> new ValidationException("Organization Unit not found"));
     }
 
-    public List<OrganizationUnitResponseDto> findAllByOrganizationId(Long organizationId) {
+    public PageResponseDto<OrganizationUnitResponseDto> findAllByOrganizationId(
+            Long organizationId,
+            int page,
+            int size
+    ) {
         if (organizationId == null) {
             throw new ValidationException("Organization id must be informed");
         }
+        var pageable = PageRequest.of(page, size, Sort.by("id").ascending());
 
-        return organizationUnitRepository.findAllByOrganization_IdOrderByIdAsc(organizationId)
+        var organizationPage = organizationUnitRepository.findAllByOrganization_IdOrderByIdAsc(organizationId, pageable);
+        var content = organizationPage
                 .stream()
                 .map(mapper::organizationUnitToResponseDto)
                 .toList();
+
+        return new PageResponseDto<>(
+                content,
+                organizationPage.getNumber(),
+                organizationPage.getSize(),
+                organizationPage.getTotalElements(),
+                organizationPage.getTotalPages(),
+                organizationPage.isLast()
+        );
     }
 
     public OrganizationUnitResponseDto findByJoinCode(String code) {
