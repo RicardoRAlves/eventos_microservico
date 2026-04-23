@@ -1,0 +1,46 @@
+name: Coverage
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+
+jobs:
+  coverage:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    name: Coverage ${{ matrix.service }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service:
+          - event_api
+          - user_api
+          - organization_api
+          - processor_api
+          - notification_api
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Give permission for Maven
+        run: chmod +x mvnw
+        working-directory: ./${{ matrix.service }}
+
+      - name: Run tests with JaCoCo
+        run: ./mvnw clean test jacoco:report --no-transfer-progress
+        working-directory: ./${{ matrix.service }}
+
+      - name: Upload JaCoCo report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report-${{ matrix.service }}
+          path: ./${{ matrix.service }}/target/site/jacoco/
