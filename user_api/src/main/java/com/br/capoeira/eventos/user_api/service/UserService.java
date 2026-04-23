@@ -11,14 +11,14 @@ import com.br.capoeira.eventos.user_api.service.aws.S3Service;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.util.List;
 
 import static org.springframework.util.StringUtils.hasText;
 
@@ -38,22 +38,53 @@ public class UserService {
         return mapper.userToResponseDto(getUserByIdOrThrow(id));
     }
 
-    public List<UserResponseDto> findAllByOrganizationId(Long organizationId) {
+    public PageResponseDto<UserResponseDto> findAllByOrganizationId(
+            Long organizationId,
+            int page,
+            int size) {
         validateId(organizationId, "Organization Id must be informed");
+        var pageable = PageRequest.of(page, size, Sort.by("id").ascending());
 
-        return repository.findAllByOrganizationIdOrderByIdAsc(organizationId)
+        var userPage = repository.findAllByOrganizationIdOrderByIdAsc(organizationId, pageable);
+
+        var content = userPage
                 .stream()
                 .map(mapper::userToResponseDto)
                 .toList();
+
+        return new PageResponseDto<>(
+                content,
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages(),
+                userPage.isLast()
+        );
     }
 
-    public List<UserResponseDto> findAllByOrganizationUnitId(Long organizationUnitId) {
+    public PageResponseDto<UserResponseDto> findAllByOrganizationUnitId(
+            Long organizationUnitId,
+            int page,
+            int size
+    ) {
         validateId(organizationUnitId, "Organization Unit Id must be informed");
+        var pageable = PageRequest.of(page, size, Sort.by("id").ascending());
 
-        return repository.findAllByOrganizationUnitIdOrderByIdAsc(organizationUnitId)
+        var userPage =  repository.findAllByOrganizationUnitIdOrderByIdAsc(organizationUnitId, pageable);
+
+        var content = userPage
                 .stream()
                 .map(mapper::userToResponseDto)
                 .toList();
+
+        return new PageResponseDto<>(
+                content,
+                userPage.getNumber(),
+                userPage.getSize(),
+                userPage.getTotalElements(),
+                userPage.getTotalPages(),
+                userPage.isLast()
+        );
     }
 
     @Transactional

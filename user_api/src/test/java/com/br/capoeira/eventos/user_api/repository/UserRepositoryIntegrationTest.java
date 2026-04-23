@@ -8,11 +8,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -101,20 +102,21 @@ public class UserRepositoryIntegrationTest {
                 999L,
                 10L
         ));
-
-        List<User> result = repository.findAllByOrganizationIdOrderByIdAsc(100L);
-
-        assertEquals(2, result.size());
-        assertEquals(user1.getId(), result.get(0).getId());
-        assertEquals(user2.getId(), result.get(1).getId());
-        assertEquals(100L, result.get(0).getOrganizationId());
-        assertEquals(100L, result.get(1).getOrganizationId());
+        var pageable = Pageable.ofSize(10);
+        Page<User> result = repository.findAllByOrganizationIdOrderByIdAsc(100L, pageable);
+        var list = result.get().toList();
+        assertEquals(2, list.size());
+        assertEquals(user1.getId(), list.get(0).getId());
+        assertEquals(user2.getId(), list.get(1).getId());
+        assertEquals(100L, list.get(0).getOrganizationId());
+        assertEquals(100L, list.get(1).getOrganizationId());
     }
 
     @Test
     @DisplayName("Should return empty list when organization id does not exist")
     void shouldReturnEmptyListWhenOrganizationIdDoesNotExist() {
-        List<User> result = repository.findAllByOrganizationIdOrderByIdAsc(999L);
+        var pageable = Pageable.ofSize(10);
+        Page<User> result = repository.findAllByOrganizationIdOrderByIdAsc(999L, pageable);
 
         assertNotNull(result);
         assertTrue(result.isEmpty());
@@ -159,22 +161,24 @@ public class UserRepositoryIntegrationTest {
                 999L
         ));
 
-        List<User> result = repository.findAllByOrganizationUnitIdOrderByIdAsc(500L);
-
-        assertEquals(2, result.size());
-        assertEquals(user1.getId(), result.get(0).getId());
-        assertEquals(user2.getId(), result.get(1).getId());
-        assertEquals(500L, result.get(0).getOrganizationUnitId());
-        assertEquals(500L, result.get(1).getOrganizationUnitId());
+        var pageable = Pageable.ofSize(10);
+        Page<User> result = repository.findAllByOrganizationUnitIdOrderByIdAsc(500L, pageable);
+        var list = result.get().toList();
+        assertEquals(2, list.size());
+        assertEquals(user1.getId(), list.get(0).getId());
+        assertEquals(user2.getId(), list.get(1).getId());
+        assertEquals(500L, list.get(0).getOrganizationUnitId());
+        assertEquals(500L, list.get(1).getOrganizationUnitId());
     }
 
     @Test
     @DisplayName("Should return empty list when organization unit id does not exist")
     void shouldReturnEmptyListWhenOrganizationUnitIdDoesNotExist() {
-        List<User> result = repository.findAllByOrganizationUnitIdOrderByIdAsc(999L);
-
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        var pageable = Pageable.ofSize(10);
+        Page<User> result = repository.findAllByOrganizationUnitIdOrderByIdAsc(999L, pageable);
+        var list = result.get().toList();
+        assertNotNull(list);
+        assertTrue(list.isEmpty());
     }
 
     @Test

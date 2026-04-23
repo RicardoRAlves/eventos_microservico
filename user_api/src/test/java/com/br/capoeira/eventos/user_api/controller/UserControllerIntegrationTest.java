@@ -25,7 +25,6 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
-
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -82,32 +81,64 @@ class UserControllerIntegrationTest {
 
     @Test
     void shouldFindAllByOrganizationIdSuccessfully() throws Exception {
-        var response = List.of(getMockUserResponseDto());
+        var userResponse = getMockUserResponseDto();
 
-        when(service.findAllByOrganizationId(1L)).thenReturn(response);
+        var response = new PageResponseDto<>(
+                List.of(userResponse),
+                0,
+                10,
+                1L,
+                1,
+                true
+        );
+
+        when(service.findAllByOrganizationId(1L, 0, 10)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/users/organization/1")
+                        .param("page", "0")
+                        .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(response.get(0).getId()))
-                .andExpect(jsonPath("$[0].email").value(response.get(0).getEmail()));
+                .andExpect(jsonPath("$.content[0].id").value(userResponse.getId()))
+                .andExpect(jsonPath("$.content[0].email").value(userResponse.getEmail()))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.last").value(true));
 
-        verify(service).findAllByOrganizationId(1L);
+        verify(service).findAllByOrganizationId(1L, 0, 10);
     }
 
     @Test
     void shouldFindAllByOrganizationUnitIdSuccessfully() throws Exception {
-        var response = List.of(getMockUserResponseDto());
+        var userResponse = getMockUserResponseDto();
 
-        when(service.findAllByOrganizationUnitId(1L)).thenReturn(response);
+        var response = new PageResponseDto<>(
+                List.of(userResponse),
+                0,
+                10,
+                1L,
+                1,
+                true
+        );
+
+        when(service.findAllByOrganizationUnitId(1L, 0, 10)).thenReturn(response);
 
         mockMvc.perform(get("/api/v1/users/organization-unit/1")
+                        .param("page", "0")
+                        .param("size", "10")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].id").value(response.get(0).getId()))
-                .andExpect(jsonPath("$[0].email").value(response.get(0).getEmail()));
+                .andExpect(jsonPath("$.content[0].id").value(userResponse.getId()))
+                .andExpect(jsonPath("$.content[0].email").value(userResponse.getEmail()))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.last").value(true));
 
-        verify(service).findAllByOrganizationUnitId(1L);
+        verify(service).findAllByOrganizationUnitId(1L, 0, 10);
     }
 
     @Test

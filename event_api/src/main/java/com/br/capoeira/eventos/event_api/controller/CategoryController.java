@@ -1,10 +1,8 @@
 package com.br.capoeira.eventos.event_api.controller;
 
-import com.br.capoeira.eventos.event_api.dto.CategoryCreateRequestDto;
-import com.br.capoeira.eventos.event_api.dto.CategoryReactivateRequestDto;
-import com.br.capoeira.eventos.event_api.dto.CategoryResponseDto;
-import com.br.capoeira.eventos.event_api.dto.CategoryUpdateRequestDto;
+import com.br.capoeira.eventos.event_api.dto.*;
 import com.br.capoeira.eventos.event_api.service.CategoryService;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,8 +11,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @Slf4j
 @RestController
@@ -27,8 +23,14 @@ public class CategoryController {
 
     @GetMapping("/all")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<CategoryResponseDto>> findAll() {
-        var categories = categoryService.findAll();
+    public ResponseEntity<PageResponseDto<CategoryResponseDto>> findAll(
+            @Parameter(description = "Page number, starts at 0")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size")
+            @RequestParam(defaultValue = "10") int size
+    ) {
+        var categories = categoryService.findAll(page, size);
         return ResponseEntity.ok(categories);
     }
 

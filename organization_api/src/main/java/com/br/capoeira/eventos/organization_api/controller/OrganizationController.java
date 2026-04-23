@@ -10,8 +10,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -38,10 +36,13 @@ public class OrganizationController {
 
     @GetMapping("/unit/all/{organizationId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<OrganizationUnitResponseDto>> findAllOrganizationUnitByOrganizationId(
-            @PathVariable("organizationId") Long organizationId) {
+    public ResponseEntity<PageResponseDto<OrganizationUnitResponseDto>> findAllOrganizationUnitByOrganizationId(
+            @PathVariable("organizationId") Long organizationId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size
+    ) {
         log.info("Finding all Organization Units by organization id {}", organizationId);
-        var response = service.findAllByOrganizationId(organizationId);
+        var response = service.findAllByOrganizationId(organizationId, page, size);
         return ResponseEntity.ok(response);
     }
 

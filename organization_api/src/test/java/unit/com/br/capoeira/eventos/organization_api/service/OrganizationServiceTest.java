@@ -13,6 +13,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 import java.util.Optional;
@@ -358,28 +362,33 @@ class OrganizationServiceTest {
         var organizationUnit = getMockOrganizationUnit();
         var responseDto = getMockOrganizationUnitResponseDto();
 
-        when(organizationUnitRepository.findAllByOrganization_IdOrderByIdAsc(anyLong()))
-                .thenReturn(List.of(organizationUnit));
+        var organizationUnitPage = new PageImpl<>(
+                List.of(organizationUnit),
+                PageRequest.of(0, 10, Sort.by("id").ascending()),
+                1
+        );
+
+        when(organizationUnitRepository.findAllByOrganization_IdOrderByIdAsc(eq(1L), any(Pageable.class)))
+                .thenReturn(organizationUnitPage);
         when(mapper.organizationUnitToResponseDto(any())).thenReturn(responseDto);
 
-        var result = service.findAllByOrganizationId(1L);
+        var result = service.findAllByOrganizationId(1L, 0, 10);
 
         assertThat(result).isNotNull();
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getId()).isEqualTo(responseDto.getId());
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getId()).isEqualTo(responseDto.getId());
 
-        verify(organizationUnitRepository).findAllByOrganization_IdOrderByIdAsc(anyLong());
+        verify(organizationUnitRepository).findAllByOrganization_IdOrderByIdAsc(eq(1L), any(Pageable.class));
         verify(mapper).organizationUnitToResponseDto(any());
     }
 
     @Test
     void shouldNotFindOrganizationUnitsByOrganizationIdWhenIdIsNull() {
-        assertThatThrownBy(() -> service.findAllByOrganizationId(null))
+        assertThatThrownBy(() -> service.findAllByOrganizationId(null, 0, 10))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("Organization id must be informed");
 
-        verify(organizationUnitRepository, never()).findAllByOrganization_IdOrderByIdAsc(anyLong());
-        verify(mapper, never()).organizationUnitToResponseDto(any());
+        verifyNoInteractions(organizationUnitRepository, mapper);
     }
 
     @Test

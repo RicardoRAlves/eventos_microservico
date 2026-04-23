@@ -15,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.*;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -92,46 +93,65 @@ class UserServiceTest {
         var response1 = new UserResponseDto();
         var response2 = new UserResponseDto();
 
-        when(repository.findAllByOrganizationIdOrderByIdAsc(10L)).thenReturn(List.of(user1, user2));
+        var userPage = new PageImpl<>(
+                List.of(user1, user2),
+                PageRequest.of(0, 10, Sort.by("id").ascending()),
+                2
+        );
+
+        when(repository.findAllByOrganizationIdOrderByIdAsc(eq(10L), any(Pageable.class))).thenReturn(userPage);
         when(mapper.userToResponseDto(user1)).thenReturn(response1);
         when(mapper.userToResponseDto(user2)).thenReturn(response2);
 
-        var result = service.findAllByOrganizationId(10L);
+        var result = service.findAllByOrganizationId(10L, 0, 10);
 
         assertNotNull(result);
-        assertEquals(2, result.size());
-        verify(repository).findAllByOrganizationIdOrderByIdAsc(10L);
+        assertEquals(2, result.getContent().size());
+        assertEquals(0, result.getPage());
+        assertEquals(10, result.getSize());
+        assertEquals(2L, result.getTotalElements());
+        assertEquals(1, result.getTotalPages());
+        assertTrue(result.isLast());
+
+        assertEquals(response1, result.getContent().get(0));
+        assertEquals(response2, result.getContent().get(1));
+
+        verify(repository).findAllByOrganizationIdOrderByIdAsc(eq(10L), any(Pageable.class));
+        verify(mapper).userToResponseDto(user1);
+        verify(mapper).userToResponseDto(user2);
     }
 
     @Test
     void shouldThrowValidationExceptionWhenOrganizationIdIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.findAllByOrganizationId(null));
+        var ex = assertThrows(ValidationException.class, () -> service.findAllByOrganizationId(null, 0, 1));
 
         assertEquals("Organization Id must be informed", ex.getMessage());
-        verify(repository, never()).findAllByOrganizationIdOrderByIdAsc(any());
+        verify(repository, never()).findAllByOrganizationIdOrderByIdAsc(any(), any());
     }
 
     @Test
     void shouldFindAllUsersByOrganizationUnitId() {
         var user = getMockUser(1L, Role.CLIENT, true);
         var response = new UserResponseDto();
+        var pageable = PageRequest.of(0, 10);
+        var userPage = new PageImpl<>(List.of(user), pageable, 2);
 
-        when(repository.findAllByOrganizationUnitIdOrderByIdAsc(20L)).thenReturn(List.of(user));
+        when(repository.findAllByOrganizationUnitIdOrderByIdAsc(anyLong(), any())).thenReturn(userPage);
         when(mapper.userToResponseDto(user)).thenReturn(response);
 
-        var result = service.findAllByOrganizationUnitId(20L);
+        var result = service.findAllByOrganizationUnitId(20L, 0, 10);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        verify(repository).findAllByOrganizationUnitIdOrderByIdAsc(20L);
+        assertEquals(1, result.getContent().size());
+        verify(repository).findAllByOrganizationUnitIdOrderByIdAsc(any(), any());
     }
 
     @Test
     void shouldThrowValidationExceptionWhenOrganizationUnitIdIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.findAllByOrganizationUnitId(null));
+        var ex = assertThrows(ValidationException.class, () -> service.findAllByOrganizationUnitId(null, 0 ,10));
 
         assertEquals("Organization Unit Id must be informed", ex.getMessage());
-        verify(repository, never()).findAllByOrganizationUnitIdOrderByIdAsc(any());
+        verify(repository, never()).findAllByOrganizationUnitIdOrderByIdAsc(any(), any());
     }
 
     @Test
