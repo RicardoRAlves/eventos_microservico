@@ -59,7 +59,7 @@ public class OrganizationController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<OrganizationResponseDto> createOrganization(
             @Valid @RequestBody OrganizationCreateRequestDto dto) {
         log.info("Creating organization with main unit {}", dto);
@@ -68,7 +68,7 @@ public class OrganizationController {
     }
 
     @PostMapping("/unit")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<OrganizationUnitResponseDto> createOrganizationUnit(
             @Valid @RequestBody OrganizationUnitDto dto) {
         log.info("Creating organization unit {}", dto);
@@ -77,7 +77,7 @@ public class OrganizationController {
     }
 
     @PutMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<OrganizationResponseDto> updateOrganization(
             @Valid @RequestBody OrganizationUpdateDto dto) {
         log.info("Updating organization {}", dto);

@@ -91,6 +91,7 @@ public class UserController {
     public ResponseEntity<UserResponseDto> changeRole(@RequestBody @Valid UserChangeRoleRequestDto dto) {
         log.info("Changing role for user id {}", dto.getId());
         var responseDto = service.changeRole(dto);
+
         return ResponseEntity.ok(responseDto);
     }
 

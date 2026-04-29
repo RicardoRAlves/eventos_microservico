@@ -34,7 +34,7 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private Role role;
+    private Role role = Role.CLIENT;
 
     @Column(nullable = false)
     private Boolean active;

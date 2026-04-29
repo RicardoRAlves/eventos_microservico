@@ -44,7 +44,6 @@ public class OrganizationRepositoryIntegrationTest {
         assertThat(saved).isNotNull();
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getName()).isEqualTo("Grupo Bonfim");
-        assertThat(saved.getSlug()).isEqualTo("grupo-bonfim");
     }
 
     @Test
@@ -59,37 +58,5 @@ public class OrganizationRepositoryIntegrationTest {
         assertThat(result).isPresent();
         assertThat(result.get().getId()).isEqualTo(saved.getId());
         assertThat(result.get().getName()).isEqualTo(saved.getName());
-    }
-
-    @Test
-    void shouldFindOrganizationBySlug() {
-        var organization = getMockOrganization();
-        organization.setId(null);
-
-        organizationRepository.save(organization);
-
-        var result = organizationRepository.findBySlug("grupo-bonfim");
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getSlug()).isEqualTo("grupo-bonfim");
-    }
-
-    @Test
-    void shouldReturnTrueWhenExistsBySlug() {
-        var organization = getMockOrganization();
-        organization.setId(null);
-
-        organizationRepository.save(organization);
-
-        var exists = organizationRepository.existsBySlug("grupo-bonfim");
-
-        assertThat(exists).isTrue();
-    }
-
-    @Test
-    void shouldReturnFalseWhenSlugDoesNotExist() {
-        var exists = organizationRepository.existsBySlug("slug-inexistente");
-
-        assertThat(exists).isFalse();
     }
 }

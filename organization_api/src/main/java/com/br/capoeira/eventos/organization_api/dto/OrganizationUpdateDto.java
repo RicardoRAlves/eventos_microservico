@@ -18,9 +18,6 @@ public class OrganizationUpdateDto {
     @NotBlank(message = "Organization name must be informed")
     private String name;
 
-    @NotBlank(message = "Organization slug must be informed")
-    private String slug;
-
     @NotBlank(message = "Organization description must be informed")
     private String description;
 

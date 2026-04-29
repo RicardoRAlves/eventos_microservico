@@ -11,7 +11,6 @@ public class MockUtils {
         var organization = new Organization();
         organization.setId(1L);
         organization.setName("Grupo Bonfim");
-        organization.setSlug("grupo-bonfim");
         organization.setDescription("Grupo de capoeira tradicional");
         organization.setLogoUrl("https://my-bucket.s3.amazonaws.com/logo.jpg");
         organization.setActive(true);
@@ -21,7 +20,6 @@ public class MockUtils {
     public static OrganizationCreateRequestDto getMockOrganizationCreateRequestDto() {
         var dto = new OrganizationCreateRequestDto();
         dto.setName("Grupo de Capoeira Nosso Senhor do Bonfim");
-        dto.setSlug("bonfim-capoeira");
         dto.setDescription("Grupo tradicional de capoeira com atuação em diversas cidades.");
         dto.setLogoUrl("https://meusite.com/images/bonfim-logo.png");
         dto.setActive(true);
@@ -51,7 +49,6 @@ public class MockUtils {
         unit.setId(1L);
         unit.setOrganization(getMockOrganization());
         unit.setName("Bonfim Jundiaí");
-        unit.setSlug("bonfim-jundiai");
         unit.setDescription("Unidade de Jundiaí");
         unit.setCity("Jundiaí");
         unit.setState("SP");
@@ -67,7 +64,6 @@ public class MockUtils {
         var dto = new OrganizationUnitDto();
         dto.setOrganizationId(1L);
         dto.setName("Bonfim Jundiaí");
-        dto.setSlug("bonfim-jundiai");
         dto.setDescription("Unidade de Jundiaí");
         dto.setCity("Jundiaí");
         dto.setState("SP");
@@ -83,7 +79,6 @@ public class MockUtils {
         var dto = new OrganizationUpdateDto();
         dto.setId(1L);
         dto.setName("Grupo de Capoeira Nosso Senhor do Bonfim Atualizado");
-        dto.setSlug("bonfim-capoeira");
         dto.setDescription("Grupo atualizado com novos eventos e unidades.");
         dto.setLogoUrl("https://meusite.com/images/bonfim-logo.png");
         dto.setActive(true);
@@ -94,7 +89,6 @@ public class MockUtils {
         var dto = new OrganizationUnitUpdateDto();
         dto.setId(1L);
         dto.setName("Bonfim Jundiaí Atualizado");
-        dto.setSlug("bonfim-jundiai");
         dto.setDescription("Unidade de Jundiaí atualizada com novos horários");
         dto.setCity("Jundiaí");
         dto.setState("SP");
@@ -110,7 +104,6 @@ public class MockUtils {
         var dto = new OrganizationResponseDto();
         dto.setId(1L);
         dto.setName("Grupo de Capoeira Nosso Senhor do Bonfim");
-        dto.setSlug("bonfim-capoeira");
         dto.setDescription("Grupo tradicional de capoeira com atuação em diversas cidades.");
         dto.setLogoUrl("https://meusite.com/images/bonfim-logo.png");
         dto.setActive(true);
@@ -124,7 +117,6 @@ public class MockUtils {
         var dto = new OrganizationUnitSummaryDto();
         dto.setId(1L);
         dto.setName("Matriz Jundiaí");
-        dto.setSlug("matriz-jundiai");
         dto.setCity("Jundiaí");
         dto.setState("SP");
         dto.setCountry("Brasil");
@@ -138,7 +130,6 @@ public class MockUtils {
         dto.setId(1L);
         dto.setOrganizationId(1L);
         dto.setName("Bonfim Jundiaí");
-        dto.setSlug("bonfim-jundiai");
         dto.setDescription("Unidade de Jundiaí");
         dto.setCity("Jundiaí");
         dto.setState("SP");

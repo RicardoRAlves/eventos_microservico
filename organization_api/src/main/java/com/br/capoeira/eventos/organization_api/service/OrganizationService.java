@@ -7,6 +7,7 @@ import com.br.capoeira.eventos.organization_api.model.Organization;
 import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationRepository;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationUnitRepository;
+import com.br.capoeira.eventos.organization_api.restClient.UserClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
@@ -28,6 +30,7 @@ public class OrganizationService {
     private final OrganizationMapper mapper;
     private final OrganizationRepository organizationRepository;
     private final OrganizationUnitRepository organizationUnitRepository;
+    private final UserClient userClient;
 
     public OrganizationResponseDto findOrganizationById(Long id) {
         if (id == null) {
@@ -96,7 +99,6 @@ public class OrganizationService {
         var organization = mapper.organizationDtoToOrganization(dto);
 
         checkOrganization(organization);
-        checkOrganizationSlug(organization);
 
         var savedOrganization = organizationRepository.save(organization);
 
@@ -104,11 +106,15 @@ public class OrganizationService {
         mainUnit.setJoinCode(generateUniqueJoinCode());
 
         checkOrganizationUnit(mainUnit);
-        checkOrganizationUnitSlug(mainUnit);
 
         var savedUnit = organizationUnitRepository.save(mainUnit);
 
         savedOrganization.setUnits(List.of(savedUnit));
+        changeUserRole(
+                dto.getUserId(),
+                savedOrganization.getId(),
+                savedUnit.getId()
+                );
 
         return mapper.organizationToResponseDto(savedOrganization);
     }
@@ -126,7 +132,6 @@ public class OrganizationService {
         organizationUnit.setJoinCode(generateUniqueJoinCode());
 
         checkOrganizationUnit(organizationUnit);
-        checkOrganizationUnitSlug(organizationUnit);
 
         var savedUnit = organizationUnitRepository.save(organizationUnit);
 
@@ -147,7 +152,6 @@ public class OrganizationService {
         mapper.updateOrganizationFromDto(dto, organization);
 
         checkOrganization(organization);
-        checkOrganizationSlugForUpdate(organization);
 
         var savedOrganization = organizationRepository.save(organization);
 
@@ -168,7 +172,6 @@ public class OrganizationService {
         mapper.updateOrganizationUnitFromDto(dto, organizationUnit);
 
         checkOrganizationUnit(organizationUnit);
-        checkOrganizationUnitSlugForUpdate(organizationUnit);
 
         var savedUnit = organizationUnitRepository.save(organizationUnit);
 
@@ -183,7 +186,6 @@ public class OrganizationService {
         return OrganizationUnit.builder()
                 .organization(organization)
                 .name(dto.getName())
-                .slug(dto.getSlug())
                 .description(dto.getDescription())
                 .city(dto.getCity())
                 .state(dto.getState())
@@ -232,9 +234,6 @@ public class OrganizationService {
         if (isEmpty(organizationUnit.getName())) {
             throw new ValidationException("Organization unit name must be informed");
         }
-        if (isEmpty(organizationUnit.getSlug())) {
-            throw new ValidationException("Organization unit slug must be informed");
-        }
         if (isEmpty(organizationUnit.getDescription())) {
             throw new ValidationException("Organization unit description must be informed");
         }
@@ -271,9 +270,6 @@ public class OrganizationService {
         if (isEmpty(organization.getName())) {
             throw new ValidationException("Organization name must be informed");
         }
-        if (isEmpty(organization.getSlug())) {
-            throw new ValidationException("Organization slug must be informed");
-        }
         if (isEmpty(organization.getDescription())) {
             throw new ValidationException("Organization description must be informed");
         }
@@ -285,36 +281,15 @@ public class OrganizationService {
         }
     }
 
-    private void checkOrganizationSlug(Organization organization) {
-        if (organizationRepository.existsBySlug(organization.getSlug())) {
-            throw new ValidationException("Organization slug already exists");
-        }
-    }
-
-    private void checkOrganizationSlugForUpdate(Organization organization) {
-        var savedOrganization = organizationRepository.findBySlug(organization.getSlug());
-
-        if (savedOrganization.isPresent() && !savedOrganization.get().getId().equals(organization.getId())) {
-            throw new ValidationException("Organization slug already exists");
-        }
-    }
-
-    private void checkOrganizationUnitSlug(OrganizationUnit organizationUnit) {
-        if (organizationUnitRepository.existsByOrganization_IdAndSlug(
-                organizationUnit.getOrganization().getId(),
-                organizationUnit.getSlug())) {
-            throw new ValidationException("Organization unit slug already exists for this organization");
-        }
-    }
-
-    private void checkOrganizationUnitSlugForUpdate(OrganizationUnit organizationUnit) {
-        var savedOrganizationUnit = organizationUnitRepository.findByOrganization_IdAndSlug(
-                organizationUnit.getOrganization().getId(),
-                organizationUnit.getSlug());
-
-        if (savedOrganizationUnit.isPresent()
-                && !savedOrganizationUnit.get().getId().equals(organizationUnit.getId())) {
-            throw new ValidationException("Organization unit slug already exists for this organization");
+    private void changeUserRole(Long userId, Long organizationId, Long unitId){
+        var userRequest = new PromoteToSuperAdminDtoRequest(
+                userId,
+                organizationId,
+                unitId
+        );
+        var userResponse = userClient.promoteToSuperAdmin(userRequest);
+        if(!Objects.equals(userResponse.getId(), userRequest.userId())){
+            throw new ValidationException("User id does not match the informed organization unit");
         }
     }
 }

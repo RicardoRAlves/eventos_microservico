@@ -3,11 +3,13 @@ package com.br.capoeira.eventos.user_api.service;
 
 import com.br.capoeira.eventos.user_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.user_api.dto.*;
+import com.br.capoeira.eventos.user_api.enums.Role;
 import com.br.capoeira.eventos.user_api.mapper.UserMapper;
 import com.br.capoeira.eventos.user_api.model.User;
 import com.br.capoeira.eventos.user_api.repository.UserRepository;
 import com.br.capoeira.eventos.user_api.restClient.OrganizationClient;
 import com.br.capoeira.eventos.user_api.service.aws.S3Service;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -93,8 +95,7 @@ public class UserService {
         validateEmailAlreadyExists(dto.getEmail());
 
         User user = mapper.createRequestDtoToUser(dto);
-        applyJoinCodeIfNecessary(user, dto.getJoinCode());
-
+        user.setRole(Role.CLIENT);
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setActive(true);
 
@@ -189,6 +190,20 @@ public class UserService {
 
         log.info("Uploading photo to S3");
         return s3Service.uploadFile(file).toString();
+    }
+
+    @Transactional
+    public UserResponseDto promoteToSuperAdmin(PromoteToSuperAdminDtoRequest request) {
+        User user = repository.findById(request.userId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        user.setRole(Role.SUPER_ADMIN);
+        user.setOrganizationId(request.organizationId());
+        user.setOrganizationUnitId(request.organizationUnitId());
+
+        User savedUser = repository.save(user);
+
+        return mapper.userToResponseDto(savedUser);
     }
 
     private User getUserByIdOrThrow(Long id) {

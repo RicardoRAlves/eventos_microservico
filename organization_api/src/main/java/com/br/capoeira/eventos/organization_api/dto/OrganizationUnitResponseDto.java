@@ -13,7 +13,6 @@ public class OrganizationUnitResponseDto {
     private Long organizationId;
 
     private String name;
-    private String slug;
     private String description;
     private String city;
     private String state;
