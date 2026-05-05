@@ -27,6 +27,7 @@ public class EventController {
     private final EventService eventService;
 
     @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<String> requestAllEvents() {
         eventService.findAllEvents();
         return ResponseEntity.ok("Request sent to queue");

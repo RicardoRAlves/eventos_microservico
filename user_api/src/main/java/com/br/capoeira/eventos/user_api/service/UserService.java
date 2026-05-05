@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import static org.springframework.util.ObjectUtils.isEmpty;
 import static org.springframework.util.StringUtils.hasText;
 
 
@@ -38,6 +39,10 @@ public class UserService {
 
     public UserResponseDto findById(Long id) {
         return mapper.userToResponseDto(getUserByIdOrThrow(id));
+    }
+
+    public UserResponseDto findByEmail(String email) {
+        return mapper.userToResponseDto(getUserByEmailOrThrow(email));
     }
 
     public PageResponseDto<UserResponseDto> findAllByOrganizationId(
@@ -110,7 +115,6 @@ public class UserService {
         User savedUser = getUserByIdOrThrow(dto.getId());
 
         updateUserFields(savedUser, dto);
-        applyJoinCodeIfNecessary(savedUser, dto.getJoinCode());
 
         User updatedUser = repository.save(savedUser);
         return mapper.userToResponseDto(updatedUser);
@@ -124,6 +128,19 @@ public class UserService {
 
         User savedUser = getUserByIdOrThrow(dto.getId());
         savedUser.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        User updatedUser = repository.save(savedUser);
+        return mapper.userToResponseDto(updatedUser);
+    }
+
+    @Transactional
+    public UserResponseDto joinCode(UserJoinCodeRequestDto dto) {
+        if (dto == null) {
+            throw new ValidationException("Request must be informed");
+        }
+
+        User savedUser = getUserByIdOrThrow(dto.getId());
+        applyJoinCode(savedUser, dto.getJoinCode());
 
         User updatedUser = repository.save(savedUser);
         return mapper.userToResponseDto(updatedUser);
@@ -213,8 +230,21 @@ public class UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
+    private User getUserByEmailOrThrow(String email) {
+        validateEmail(email, "Email must be informed");
+
+        return repository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
     private void validateId(Long id, String message) {
         if (id == null) {
+            throw new ValidationException(message);
+        }
+    }
+
+    private void validateEmail(String email, String message) {
+        if (isEmpty(email)) {
             throw new ValidationException(message);
         }
     }
@@ -245,12 +275,14 @@ public class UserService {
         }
     }
 
-    private void applyJoinCodeIfNecessary(User user, String joinCode) {
+    private void applyJoinCode(User user, String joinCode) {
         if (user.getOrganizationId() == null && hasText(joinCode)) {
             var org = organizationClient.getByJoinCode(joinCode);
 
             user.setOrganizationId(org.getOrganizationId());
             user.setOrganizationUnitId(org.getOrganizationUnitId());
+        } else {
+            throw new ValidationException("User is already added to Organization " + user.getOrganizationId());
         }
     }
 

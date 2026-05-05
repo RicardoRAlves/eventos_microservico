@@ -8,11 +8,14 @@ import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationRepository;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationUnitRepository;
 import com.br.capoeira.eventos.organization_api.restClient.UserClient;
+import com.br.capoeira.eventos.organization_api.service.aws.S3Service;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +23,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class OrganizationService {
@@ -31,6 +35,7 @@ public class OrganizationService {
     private final OrganizationRepository organizationRepository;
     private final OrganizationUnitRepository organizationUnitRepository;
     private final UserClient userClient;
+    private final S3Service s3Service;
 
     public OrganizationResponseDto findOrganizationById(Long id) {
         if (id == null) {
@@ -110,11 +115,12 @@ public class OrganizationService {
         var savedUnit = organizationUnitRepository.save(mainUnit);
 
         savedOrganization.setUnits(List.of(savedUnit));
+
         changeUserRole(
                 dto.getUserId(),
                 savedOrganization.getId(),
                 savedUnit.getId()
-                );
+        );
 
         return mapper.organizationToResponseDto(savedOrganization);
     }
@@ -176,6 +182,22 @@ public class OrganizationService {
         var savedUnit = organizationUnitRepository.save(organizationUnit);
 
         return mapper.organizationUnitToResponseDto(savedUnit);
+    }
+
+    public String updatePhoto(MultipartFile file, String organizationName) {
+        if (file == null || file.isEmpty()) {
+            throw new ValidationException("Image file must be provided");
+        }
+
+        if (organizationName == null || organizationName.isBlank()) {
+            throw new ValidationException("Organization name must be provided");
+        }
+
+        log.info("Uploading photo to S3 for organization={}", organizationName);
+
+        return s3Service
+                .uploadOrganizationImage(file, organizationName)
+                .toString();
     }
 
     private OrganizationUnit buildMainUnit(MainUnitDto dto, Organization organization) {
@@ -287,9 +309,14 @@ public class OrganizationService {
                 organizationId,
                 unitId
         );
+
         var userResponse = userClient.promoteToSuperAdmin(userRequest);
-        if(!Objects.equals(userResponse.getId(), userRequest.userId())){
-            throw new ValidationException("User id does not match the informed organization unit");
+
+        if (!Objects.equals(userResponse.getId(), userId)
+                || !Objects.equals(userResponse.getOrganizationId(), organizationId)
+                || !Objects.equals(userResponse.getOrganizationUnitId(), unitId)) {
+
+            throw new ValidationException("User not properly linked to organization");
         }
     }
 }

@@ -11,11 +11,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class UserUpdateRequestDto {
+public class UserJoinCodeRequestDto {
     @NotNull(message = "User Id must be informed")
-    private Long Id;
-    @NotBlank(message = "User name must be informed")
-    private String name;
-    @NotBlank(message = "Avatar Url must be informed")
-    private String avatarUrl;
+    private Long id;
+    @NotBlank(message = "JoinCode must be informed")
+    private String joinCode;
 }

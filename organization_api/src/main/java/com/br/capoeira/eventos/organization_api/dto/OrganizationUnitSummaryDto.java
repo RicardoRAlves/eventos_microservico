@@ -13,9 +13,13 @@ public class OrganizationUnitSummaryDto {
 
     private Long id;
     private String name;
+    private String description;
     private String city;
     private String state;
     private String country;
+    private String address;
+    private String contactPhone;
+    private String contactEmail;
     private String joinCode;
     private Boolean active;
 }

@@ -11,6 +11,9 @@ public class OrganizationUnitResponseDto {
 
     private Long id;
     private Long organizationId;
+    private String organizationName;
+    private String organizationDescription;
+    private String organizationLogoUrl;
 
     private String name;
     private String description;

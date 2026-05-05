@@ -49,10 +49,8 @@ An organization represents a logical group within the system.
 * An organization must have:
 
     * name
-    * slug (unique identifier)
     * description
 * The organization must have an active status
-* Slug must be unique across the system
 
 ---
 
@@ -140,7 +138,7 @@ Contains:
 
 * organizationId
 * organizationUnitId
-* additional metadata (name, slug, etc.)
+* additional metadata (name, etc.)
 
 ---
 
@@ -152,7 +150,6 @@ Contains:
 * Organization not found
 * Unit not found
 * Inactive organization or unit
-* Duplicate slug
 
 ### Rules
 
@@ -169,7 +166,6 @@ The following conditions must always be true:
 * Every unit belongs to exactly one organization
 * Every join code maps to a valid organization and unit
 * Organization and unit relationships must be consistent
-* Slugs must be unique
 * Inactive entities must not be used for associations
 
 ---
@@ -192,7 +188,6 @@ The organization-api operates with strong consistency.
 
 1. Client sends request to create organization
 2. organization-api validates input
-3. organization-api ensures slug uniqueness
 4. organization-api persists organization
 
 ---

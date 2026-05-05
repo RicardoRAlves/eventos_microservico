@@ -29,6 +29,9 @@ public interface OrganizationMapper {
     OrganizationUnit organizationUnitDtoToOrganizationUnit(OrganizationUnitDto input);
 
     @Mapping(target = "organizationId", source = "organization.id")
+    @Mapping(target = "organizationName", source = "organization.name")
+    @Mapping(target = "organizationDescription", source = "organization.description")
+    @Mapping(target = "organizationLogoUrl", source = "organization.logoUrl")
     OrganizationUnitResponseDto organizationUnitToResponseDto(OrganizationUnit input);
 
     @Mapping(target = "id", ignore = true)

@@ -32,7 +32,6 @@ public class MockUtils {
     public static MainUnitDto getMockMainUnitDto() {
         var dto = new MainUnitDto();
         dto.setName("Matriz Jundiaí");
-        dto.setSlug("matriz-jundiai");
         dto.setDescription("Unidade principal do grupo.");
         dto.setCity("Jundiaí");
         dto.setState("SP");

@@ -32,6 +32,14 @@ public class UserController {
     }
 
     @SecurityRequirement(name = "bearerAuth")
+    @GetMapping("/email/{email}")
+    public ResponseEntity<UserResponseDto> findUserByEmail(@PathVariable String email) {
+        log.info("Finding user by email {}", email);
+        var user = service.findByEmail(email);
+        return ResponseEntity.ok(user);
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/organization/{organizationId}")
     public ResponseEntity<PageResponseDto<UserResponseDto>> findAllByOrganizationId(
             @PathVariable Long organizationId,
@@ -74,6 +82,14 @@ public class UserController {
     public ResponseEntity<UserResponseDto> updateUser(@RequestBody @Valid UserUpdateRequestDto dto) {
         log.info("Updating user with id {}", dto.getId());
         var responseDto = service.update(dto);
+        return ResponseEntity.ok(responseDto);
+    }
+
+    @SecurityRequirement(name = "bearerAuth")
+    @PatchMapping("/joincode")
+    public ResponseEntity<UserResponseDto> joinCode(@RequestBody @Valid UserJoinCodeRequestDto dto) {
+        log.info("Join code from Organization for user id {}", dto.getId());
+        var responseDto = service.joinCode(dto);
         return ResponseEntity.ok(responseDto);
     }
 
