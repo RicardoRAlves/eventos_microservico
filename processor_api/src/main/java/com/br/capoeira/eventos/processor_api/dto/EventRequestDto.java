@@ -37,6 +37,7 @@ public class EventRequestDto {
 
     private EventScope scope;
 
+    private Long userId;
     private Long organizationId;
     private Long organizationUnitId;
 

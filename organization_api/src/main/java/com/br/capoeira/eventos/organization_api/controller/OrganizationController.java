@@ -39,7 +39,7 @@ public class OrganizationController {
     }
 
     @GetMapping("/unit/all/{organizationId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<PageResponseDto<OrganizationUnitResponseDto>> findAllOrganizationUnitByOrganizationId(
             @PathVariable("organizationId")
             Long organizationId,
@@ -97,7 +97,7 @@ public class OrganizationController {
     }
 
     @PutMapping("/unit")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<OrganizationUnitResponseDto> updateOrganizationUnit(@Valid @RequestBody OrganizationUnitUpdateDto dto) {
         log.info("Updating  a organization unit {}", dto);
         var response = service.update(dto);

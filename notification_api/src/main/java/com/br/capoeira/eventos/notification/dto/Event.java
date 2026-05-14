@@ -27,6 +27,9 @@ public class Event {
     private String contact;
     private String image;
     private Boolean active;
+    private Long userId;
+    private Long organizationId;
+    private Long organizationUnitId;
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")
     private LocalDateTime createAt;
     @JsonFormat(pattern = "dd-MM-yyyy HH:mm:ss")

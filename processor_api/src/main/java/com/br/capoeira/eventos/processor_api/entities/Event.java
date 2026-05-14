@@ -59,8 +59,11 @@ public class Event {
     @Column(nullable = false)
     private EventScope scope;
 
+    @Column(nullable = false)
+    private Long userId;
+    @Column(nullable = false)
     private Long organizationId;
-
+    @Column(nullable = false)
     private Long organizationUnitId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
