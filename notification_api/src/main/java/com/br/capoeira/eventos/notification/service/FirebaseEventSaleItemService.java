@@ -1,6 +1,7 @@
 package com.br.capoeira.eventos.notification.service;
 
 import com.br.capoeira.eventos.notification.dto.EventSaleItemRequestDto;
+import com.br.capoeira.eventos.notification.mapper.EventSaleItemMapper;
 import com.google.api.core.ApiFuture;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.Firestore;
@@ -52,19 +53,20 @@ public class FirebaseEventSaleItemService {
     }
 
     private void persistEventSaleItem(
-            EventSaleItemRequestDto eventSaleItem,
+            EventSaleItemRequestDto dto,
             String operation
     ) {
         try {
+            var eventSaleItemDocument = EventSaleItemMapper.toDocument(dto);
             ApiFuture<WriteResult> future = getDocumentReference(
-                    eventSaleItem.getTransactionId()
-            ).set(eventSaleItem, SetOptions.merge());
+                    eventSaleItemDocument.getTransactionId()
+            ).set(eventSaleItemDocument, SetOptions.merge());
 
             WriteResult result = future.get();
 
             log.info(
                     "Event sale item {} {} on Firestore at {}",
-                    eventSaleItem.getTransactionId(),
+                    eventSaleItemDocument.getTransactionId(),
                     operation,
                     result.getUpdateTime()
             );
