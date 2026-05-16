@@ -2,7 +2,7 @@ package unit.com.br.capoeira.eventos.processor_api.producer;
 
 import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
 import com.br.capoeira.eventos.processor_api.dto.EventResponseDto;
-import com.br.capoeira.eventos.processor_api.producer.ProcessorProducer;
+import com.br.capoeira.eventos.processor_api.producer.EventProcessorProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,13 +22,13 @@ import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMo
 import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventResponseDto;
 
 @ExtendWith(MockitoExtension.class)
-public class ProcessorProducerTest {
+public class EventProcessorProducerTest {
 
     @Mock
     private RabbitTemplate rabbitTemplate;
 
     @InjectMocks
-    private ProcessorProducer producer;
+    private EventProcessorProducer producer;
 
     private final EventResponseDto event = getMockEventResponseDto();
     private final EventRequestDto eventRequest = getMockEventRequestDto();

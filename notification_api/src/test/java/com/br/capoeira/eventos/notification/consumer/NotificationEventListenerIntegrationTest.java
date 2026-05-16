@@ -1,8 +1,8 @@
 package com.br.capoeira.eventos.notification.consumer;
 
 import com.br.capoeira.eventos.notification.dto.Event;
-import com.br.capoeira.eventos.notification.service.FirebaseService;
-import com.br.capoeira.eventos.notification.service.NotificationService;
+import com.br.capoeira.eventos.notification.service.FirebaseEventService;
+import com.br.capoeira.eventos.notification.service.NotificationEventService;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -29,7 +29,7 @@ import static unit.com.br.capoeira.eventos.notification.utils.MockUtils.getMockE
 @Testcontainers
 @SpringBootTest
 @ActiveProfiles("test")
-public class NotificationListenerIntegrationTest {
+public class NotificationEventListenerIntegrationTest {
 
     @Container
     static RabbitMQContainer rabbitMQ =
@@ -50,10 +50,10 @@ public class NotificationListenerIntegrationTest {
     private RabbitAdmin rabbitAdmin;
 
     @MockitoBean
-    private NotificationService service;
+    private NotificationEventService service;
 
     @MockitoBean
-    private FirebaseService firebaseService;
+    private FirebaseEventService firebaseEventService;
 
     @Value("${rabbitmq.queue.create-notification.name}")
     private String createNotificationName;

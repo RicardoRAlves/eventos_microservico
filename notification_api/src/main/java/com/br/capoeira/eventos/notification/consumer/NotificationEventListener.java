@@ -2,7 +2,7 @@ package com.br.capoeira.eventos.notification.consumer;
 
 import com.br.capoeira.eventos.notification.dto.EventErrorDto;
 import com.br.capoeira.eventos.notification.dto.EventRequestDto;
-import com.br.capoeira.eventos.notification.service.NotificationService;
+import com.br.capoeira.eventos.notification.service.NotificationEventService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -13,9 +13,9 @@ import java.util.List;
 @Slf4j
 @Component
 @AllArgsConstructor
-public class NotificationListener {
+public class NotificationEventListener {
 
-    private final NotificationService service;
+    private final NotificationEventService service;
 
     @RabbitListener(queues = "${rabbitmq.queue.create-notification.name}")
     public void saveEvent(EventRequestDto event){

@@ -1,0 +1,52 @@
+package com.br.capoeira.eventos.user_api.model;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import lombok.*;
+import jakarta.persistence.*;
+
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
+
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(
+        name = "user_favorite_events",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_user_favorite_event",
+                        columnNames = {"user_id", "event_id"}
+                )
+        }
+)
+public class UserFavoriteEvents {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Column(name = "event_id", nullable = false)
+    private Long eventId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "event_scope", nullable = false)
+    private EventScope eventScope;
+
+    @Column(name = "organization_id")
+    private Long organizationId;
+
+    @Column(name = "organization_unit_id")
+    private Long organizationUnitId;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+}

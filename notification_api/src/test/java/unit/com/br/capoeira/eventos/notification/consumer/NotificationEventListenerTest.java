@@ -1,11 +1,11 @@
 package unit.com.br.capoeira.eventos.notification.consumer;
 
-import com.br.capoeira.eventos.notification.consumer.NotificationListener;
+import com.br.capoeira.eventos.notification.consumer.NotificationEventListener;
 import com.br.capoeira.eventos.notification.dto.EventErrorDto;
 import com.br.capoeira.eventos.notification.dto.EventRequestDto;
 import com.br.capoeira.eventos.notification.dto.enums.EventScope;
 import com.br.capoeira.eventos.notification.dto.enums.TypeContact;
-import com.br.capoeira.eventos.notification.service.NotificationService;
+import com.br.capoeira.eventos.notification.service.NotificationEventService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,13 +21,13 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(MockitoExtension.class)
-class NotificationListenerTest {
+class NotificationEventListenerTest {
 
     @Mock
-    private NotificationService service;
+    private NotificationEventService service;
 
     @InjectMocks
-    private NotificationListener listener;
+    private NotificationEventListener listener;
 
     @Test
     void shouldSaveNewEvent() {

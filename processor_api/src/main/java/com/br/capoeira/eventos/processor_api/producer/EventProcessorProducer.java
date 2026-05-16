@@ -1,5 +1,6 @@
 package com.br.capoeira.eventos.processor_api.producer;
 
+import com.br.capoeira.eventos.processor_api.dto.EventDeleteResponseDto;
 import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
 import com.br.capoeira.eventos.processor_api.dto.EventResponseDto;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +14,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ProcessorProducer {
+public class EventProcessorProducer {
 
     @Value("${rabbitmq.exchange.create-notification.name}")
     private String createNotificationExchange;
@@ -26,6 +27,9 @@ public class ProcessorProducer {
 
     @Value("${rabbitmq.exchange.update-notification.name}")
     private String updateNotificationExchange;
+
+    @Value("${rabbitmq.exchange.delete-notification.name}")
+    private String deleteNotificationExchange;
 
     @Value("${rabbitmq.exchange.update-error-notification.name}")
     private String updateErrorNotificationExchange;
@@ -45,6 +49,11 @@ public class ProcessorProducer {
     public void sendEventForUpdateQueue(EventResponseDto dto){
         rabbitTemplate.convertAndSend(updateNotificationExchange, "", dto);
         log.info("Update Event {}, sent to : {}", dto, updateNotificationExchange);
+    }
+
+    public void sendEventForDeleteQueue(EventDeleteResponseDto dto){
+        rabbitTemplate.convertAndSend(deleteNotificationExchange, "", dto);
+        log.info("Delete Event {}, sent to : {}", dto, deleteNotificationExchange);
     }
 
     public void sendEventForUpdateErrorQueue(EventRequestDto dto){

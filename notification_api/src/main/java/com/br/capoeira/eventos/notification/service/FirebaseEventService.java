@@ -18,7 +18,7 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class FirebaseService {
+public class FirebaseEventService {
 
     private static final String COLLECTION_NAME = "events_v2";
     private static final String KEY_ACTION = "action";

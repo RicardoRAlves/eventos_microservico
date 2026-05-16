@@ -3,7 +3,7 @@ package com.br.capoeira.eventos.processor_api.producer;
 import com.br.capoeira.eventos.processor_api.consumer.ProcessorEventListener;
 import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
 import com.br.capoeira.eventos.processor_api.dto.EventResponseDto;
-import com.br.capoeira.eventos.processor_api.service.ProcessorService;
+import com.br.capoeira.eventos.processor_api.service.EventProcessorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.BindingBuilder;
@@ -31,7 +31,7 @@ import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMo
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
 })
 @Testcontainers
-public class ProcessorProducerIntegrationTest {
+public class EventProcessorProducerIntegrationTest {
 
     @Value("${rabbitmq.exchange.create-notification.name}")
     private String createNotificationExchange;
@@ -65,13 +65,13 @@ public class ProcessorProducerIntegrationTest {
     private RabbitAdmin rabbitAdmin;
 
     @Autowired
-    private ProcessorProducer producer;
+    private EventProcessorProducer producer;
 
     @MockitoBean
     private ProcessorEventListener processorEventListener;
 
     @MockitoBean
-    private ProcessorService processorService;
+    private EventProcessorService eventProcessorService;
 
     private final String createQueueName = "test.queue.create";
 

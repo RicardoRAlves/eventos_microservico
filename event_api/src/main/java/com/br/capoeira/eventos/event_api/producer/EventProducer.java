@@ -1,5 +1,6 @@
 package com.br.capoeira.eventos.event_api.producer;
 
+import com.br.capoeira.eventos.event_api.dto.EventDeleteResponseDto;
 import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,9 @@ public class EventProducer {
     @Value("${rabbitmq.exchange.update.name}")
     private String exchangeUpdate;
 
+    @Value("${rabbitmq.exchange.delete.name}")
+    private String exchangeDelete;
+
     public void sendingNewEventToProcessor(EventResponseDto eventResponseDto){
        log.info("Sending new Event to save on database {}", eventResponseDto);
        rabbitTemplate.convertAndSend(createExchange, "", eventResponseDto);
@@ -44,5 +48,10 @@ public class EventProducer {
     public void sendingEventUpdatedToProcessor(EventResponseDto eventResponseDto){
         log.info("Sending updated Event to save on database {}", eventResponseDto);
         rabbitTemplate.convertAndSend(exchangeUpdate, "", eventResponseDto);
+    }
+
+    public void sendingEventDeletedToProcessor(EventDeleteResponseDto eventResponseDto){
+        log.info("Sending deleted Event to processor {}", eventResponseDto);
+        rabbitTemplate.convertAndSend(exchangeDelete, "", eventResponseDto);
     }
 }

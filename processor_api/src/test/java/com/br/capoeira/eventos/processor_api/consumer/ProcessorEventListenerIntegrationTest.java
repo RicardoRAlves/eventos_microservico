@@ -1,6 +1,6 @@
 package com.br.capoeira.eventos.processor_api.consumer;
 
-import com.br.capoeira.eventos.processor_api.service.ProcessorService;
+import com.br.capoeira.eventos.processor_api.service.EventProcessorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
@@ -47,7 +47,7 @@ public class ProcessorEventListenerIntegrationTest {
     private RabbitAdmin rabbitAdmin;
 
     @MockitoBean
-    private ProcessorService service;
+    private EventProcessorService service;
 
     @Value("${rabbitmq.create.queue.name}")
     private String createQueueName;

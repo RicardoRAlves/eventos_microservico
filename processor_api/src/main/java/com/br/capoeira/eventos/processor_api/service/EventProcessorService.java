@@ -1,11 +1,13 @@
 package com.br.capoeira.eventos.processor_api.service;
 
 import com.br.capoeira.eventos.processor_api.config.exception.ValidationException;
+import com.br.capoeira.eventos.processor_api.dto.EventDeleteRequestDto;
+import com.br.capoeira.eventos.processor_api.dto.EventDeleteResponseDto;
 import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
 import com.br.capoeira.eventos.processor_api.entities.Category;
 import com.br.capoeira.eventos.processor_api.entities.Event;
 import com.br.capoeira.eventos.processor_api.mapper.EventMapper;
-import com.br.capoeira.eventos.processor_api.producer.ProcessorProducer;
+import com.br.capoeira.eventos.processor_api.producer.EventProcessorProducer;
 import com.br.capoeira.eventos.processor_api.repository.CategoryRepository;
 import com.br.capoeira.eventos.processor_api.repository.EventRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -17,12 +19,12 @@ import lombok.RequiredArgsConstructor;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProcessorService {
+public class EventProcessorService {
 
     private final EventRepository eventRepository;
     private final CategoryRepository categoryRepository;
     private final EventMapper mapper;
-    private final ProcessorProducer producer;
+    private final EventProcessorProducer producer;
 
     public void findAll() {
         log.info("Finding all events");
@@ -164,6 +166,28 @@ public class ProcessorService {
                     throw new ValidationException("ORGANIZATION_UNIT events must have organizationUnitId");
                 }
             }
+        }
+    }
+
+    @Transactional
+    public void deleteEvent(EventDeleteRequestDto dto) {
+        log.info("Deleting event. transactionId={}", dto.getTransactionId());
+
+        try {
+            var savedEvent = findByTransactionId(dto.getTransactionId());
+            savedEvent.setActive(false);
+
+            var updatedEvent = eventRepository.save(savedEvent);
+            var responseDto = new EventDeleteResponseDto(dto.getTransactionId());
+
+            producer.sendEventForDeleteQueue(responseDto);
+
+            log.info("Event deleted successfully. id={}, transactionId={}",
+                    updatedEvent.getId(), updatedEvent.getTransactionId());
+
+        } catch (Exception e) {
+            log.error("Unexpected error while updating event. transactionId={}", dto.getTransactionId(), e);
+            throw new ValidationException("Error while updating event: " + e.getMessage());
         }
     }
 }

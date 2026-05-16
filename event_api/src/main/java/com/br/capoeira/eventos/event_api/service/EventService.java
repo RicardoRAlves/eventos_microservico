@@ -1,9 +1,7 @@
 package com.br.capoeira.eventos.event_api.service;
 
 import com.br.capoeira.eventos.event_api.config.exception.ValidationException;
-import com.br.capoeira.eventos.event_api.dto.EventCreateRequestDto;
-import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
-import com.br.capoeira.eventos.event_api.dto.EventUpdateRequestDto;
+import com.br.capoeira.eventos.event_api.dto.*;
 import com.br.capoeira.eventos.event_api.mapper.EventMapper;
 import com.br.capoeira.eventos.event_api.model.Category;
 import com.br.capoeira.eventos.event_api.model.Event;
@@ -116,6 +114,25 @@ public class EventService {
         }
 
         producer.sendingErrorCreateEventToNotification(eventResponseDto);
+    }
+
+    public void deleteEventByTransactionId(EventDeleteRequestDto dto){
+        var savedEvent = repository.findByTransactionId(dto.getTransactionId());
+
+        try {
+            if (savedEvent.isPresent()){
+                log.info("Sending Delete event to processor. transactionId={}", savedEvent.get().getTransactionId());
+                savedEvent.get().setActive(false);
+                repository.save(savedEvent.get());
+                var eventResponseDto = new EventDeleteResponseDto(savedEvent.get().getTransactionId());
+                producer.sendingEventDeletedToProcessor(eventResponseDto);
+            }
+        } catch (Exception e) {
+            var errorMessage = "Error while trying to delete event. transactionId=%s"
+                    .formatted(dto.getTransactionId());
+            log.error(errorMessage, e);
+            throw new RuntimeException(errorMessage, e);
+        }
     }
 
     private Category findActiveCategoryByName(String name) {

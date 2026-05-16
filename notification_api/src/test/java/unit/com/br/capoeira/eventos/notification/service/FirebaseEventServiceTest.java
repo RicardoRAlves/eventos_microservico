@@ -6,7 +6,7 @@ import com.br.capoeira.eventos.notification.dto.EventSyncDto;
 import com.br.capoeira.eventos.notification.dto.enums.EventScope;
 import com.br.capoeira.eventos.notification.dto.enums.TypeContact;
 import com.br.capoeira.eventos.notification.mapper.EventMapper;
-import com.br.capoeira.eventos.notification.service.FirebaseService;
+import com.br.capoeira.eventos.notification.service.FirebaseEventService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.api.core.ApiFuture;
@@ -31,7 +31,7 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(MockitoExtension.class)
-class FirebaseServiceTest {
+class FirebaseEventServiceTest {
 
     @Mock
     private Firestore firestore;
@@ -61,7 +61,7 @@ class FirebaseServiceTest {
     private WriteBatch writeBatch;
 
     @InjectMocks
-    private FirebaseService firebaseService;
+    private FirebaseEventService firebaseEventService;
 
     private EventRequestDto event;
     private EventDocument eventDocument;
@@ -115,7 +115,7 @@ class FirebaseServiceTest {
             when(documentReference.set(eventDocument, SetOptions.merge())).thenReturn(writeResultFuture);
             when(writeResultFuture.get()).thenReturn(writeResult);
 
-            assertDoesNotThrow(() -> firebaseService.addEvent(event));
+            assertDoesNotThrow(() -> firebaseEventService.addEvent(event));
 
             verify(firestore).collection(events_collection);
             verify(collectionReference).document("tx-123");
@@ -136,7 +136,7 @@ class FirebaseServiceTest {
 
             RuntimeException exception = assertThrows(
                     RuntimeException.class,
-                    () -> firebaseService.addEvent(event)
+                    () -> firebaseEventService.addEvent(event)
             );
 
             assertTrue(exception.getMessage().contains("Error trying to added event"));
@@ -153,7 +153,7 @@ class FirebaseServiceTest {
             when(documentReference.set(eventDocument, SetOptions.merge())).thenReturn(writeResultFuture);
             when(writeResultFuture.get()).thenReturn(writeResult);
 
-            firebaseService.updateEvent(event);
+            firebaseEventService.updateEvent(event);
 
             verify(firestore).collection(events_collection);
             verify(collectionReference).document("tx-123");
@@ -174,7 +174,7 @@ class FirebaseServiceTest {
             when(writeBatch.commit()).thenReturn(writeResultsFuture);
             when(writeResultsFuture.get()).thenReturn(List.of(writeResult));
 
-            firebaseService.addMultipleEventsBatch(List.of(event));
+            firebaseEventService.addMultipleEventsBatch(List.of(event));
 
             verify(firestore).batch();
             verify(firestore).collection(events_collection);
@@ -191,7 +191,7 @@ class FirebaseServiceTest {
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
-                () -> firebaseService.sendEventNotification(event, CREATE, "public")
+                () -> firebaseEventService.sendEventNotification(event, CREATE, "public")
         );
 
         assertTrue(exception.getMessage().contains("Error serializing payload to JSON"));
@@ -202,7 +202,7 @@ class FirebaseServiceTest {
         when(objectMapper.writeValueAsString(any())).thenReturn("eventToJson");
         when(firebaseMessaging.send(any(Message.class))).thenReturn("ID");
 
-        firebaseService.sendEventNotification(event, CREATE, "public");
+        firebaseEventService.sendEventNotification(event, CREATE, "public");
 
         verify(objectMapper).writeValueAsString(event);
         verify(firebaseMessaging).send(any(Message.class));
@@ -218,7 +218,7 @@ class FirebaseServiceTest {
         when(objectMapper.writeValueAsString(any())).thenReturn("eventToJson");
         when(firebaseMessaging.send(any(Message.class))).thenReturn("ID");
 
-        firebaseService.sendEventNotification(syncDto, CREATE, "public");
+        firebaseEventService.sendEventNotification(syncDto, CREATE, "public");
 
         verify(objectMapper).writeValueAsString(syncDto);
         verify(firebaseMessaging).send(any(Message.class));

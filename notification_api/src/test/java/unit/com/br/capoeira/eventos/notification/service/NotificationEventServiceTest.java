@@ -6,8 +6,8 @@ import com.br.capoeira.eventos.notification.dto.EventSyncDto;
 import com.br.capoeira.eventos.notification.dto.enums.Actions;
 import com.br.capoeira.eventos.notification.dto.enums.EventScope;
 import com.br.capoeira.eventos.notification.dto.enums.TypeContact;
-import com.br.capoeira.eventos.notification.service.FirebaseService;
-import com.br.capoeira.eventos.notification.service.NotificationService;
+import com.br.capoeira.eventos.notification.service.FirebaseEventService;
+import com.br.capoeira.eventos.notification.service.NotificationEventService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,38 +22,38 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @ExtendWith(MockitoExtension.class)
-class NotificationServiceTest {
+class NotificationEventServiceTest {
 
     @Mock
-    private FirebaseService firebaseService;
+    private FirebaseEventService firebaseEventService;
 
     @InjectMocks
-    private NotificationService service;
+    private NotificationEventService service;
 
     @Test
     void shouldCreateNewEventToFirestore() {
         var event = getMockEventRequestDto(EventScope.PUBLIC, null, null);
 
-        doNothing().when(firebaseService).addEvent(any(EventRequestDto.class));
-        doNothing().when(firebaseService).sendEventNotification(any(), any(), anyString());
+        doNothing().when(firebaseEventService).addEvent(any(EventRequestDto.class));
+        doNothing().when(firebaseEventService).sendEventNotification(any(), any(), anyString());
 
         service.createNewEvent(event);
 
-        verify(firebaseService).addEvent(event);
-        verify(firebaseService).sendEventNotification(event, Actions.CREATE, "public");
+        verify(firebaseEventService).addEvent(event);
+        verify(firebaseEventService).sendEventNotification(event, Actions.CREATE, "public");
     }
 
     @Test
     void shouldUpdateEventToFirestore() {
         var event = getMockEventRequestDto(EventScope.ORGANIZATION, 1L, null);
 
-        doNothing().when(firebaseService).updateEvent(any(EventRequestDto.class));
-        doNothing().when(firebaseService).sendEventNotification(any(), any(), anyString());
+        doNothing().when(firebaseEventService).updateEvent(any(EventRequestDto.class));
+        doNothing().when(firebaseEventService).sendEventNotification(any(), any(), anyString());
 
         service.updateEvent(event);
 
-        verify(firebaseService).updateEvent(event);
-        verify(firebaseService).sendEventNotification(event, Actions.UPDATE, "org_1");
+        verify(firebaseEventService).updateEvent(event);
+        verify(firebaseEventService).sendEventNotification(event, Actions.UPDATE, "org_1");
     }
 
     @Test
@@ -69,40 +69,40 @@ class NotificationServiceTest {
 
         var events = List.of(publicEvent, orgEvent, unitEvent);
 
-        doNothing().when(firebaseService).addMultipleEventsBatch(any());
-        doNothing().when(firebaseService).sendEventNotification(any(), any(), anyString());
+        doNothing().when(firebaseEventService).addMultipleEventsBatch(any());
+        doNothing().when(firebaseEventService).sendEventNotification(any(), any(), anyString());
 
         service.getAllEvents(events);
 
-        verify(firebaseService).addMultipleEventsBatch(events);
-        verify(firebaseService, times(3)).sendEventNotification(any(EventSyncDto.class), eq(Actions.GET_ALL), anyString());
-        verify(firebaseService).sendEventNotification(any(EventSyncDto.class), eq(Actions.GET_ALL), eq("public"));
-        verify(firebaseService).sendEventNotification(any(EventSyncDto.class), eq(Actions.GET_ALL), eq("org_1"));
-        verify(firebaseService).sendEventNotification(any(EventSyncDto.class), eq(Actions.GET_ALL), eq("unit_10"));
+        verify(firebaseEventService).addMultipleEventsBatch(events);
+        verify(firebaseEventService, times(3)).sendEventNotification(any(EventSyncDto.class), eq(Actions.GET_ALL), anyString());
+        verify(firebaseEventService).sendEventNotification(any(EventSyncDto.class), eq(Actions.GET_ALL), eq("public"));
+        verify(firebaseEventService).sendEventNotification(any(EventSyncDto.class), eq(Actions.GET_ALL), eq("org_1"));
+        verify(firebaseEventService).sendEventNotification(any(EventSyncDto.class), eq(Actions.GET_ALL), eq("unit_10"));
     }
 
     @Test
     void shouldSendErrorNotificationWhenCreateEvent() {
         var event = getMockEventErrorDto(EventScope.PUBLIC, null, null);
 
-        doNothing().when(firebaseService).sendEventNotification(any(), any(), anyString());
+        doNothing().when(firebaseEventService).sendEventNotification(any(), any(), anyString());
 
         service.createErrorEvent(event);
 
-        verify(firebaseService, never()).addEvent(any());
-        verify(firebaseService).sendEventNotification(event, Actions.ERROR_CREATE, "public");
+        verify(firebaseEventService, never()).addEvent(any());
+        verify(firebaseEventService).sendEventNotification(event, Actions.ERROR_CREATE, "public");
     }
 
     @Test
     void shouldSendErrorNotificationWhenUpdateEvent() {
         var event = getMockEventErrorDto(EventScope.ORGANIZATION_UNIT, 1L, 10L);
 
-        doNothing().when(firebaseService).sendEventNotification(any(), any(), anyString());
+        doNothing().when(firebaseEventService).sendEventNotification(any(), any(), anyString());
 
         service.updateErrorEvent(event);
 
-        verify(firebaseService, never()).addEvent(any());
-        verify(firebaseService).sendEventNotification(event, Actions.ERROR_UPDATE, "unit_10");
+        verify(firebaseEventService, never()).addEvent(any());
+        verify(firebaseEventService).sendEventNotification(event, Actions.ERROR_UPDATE, "unit_10");
     }
 
     private EventRequestDto getMockEventRequestDto(

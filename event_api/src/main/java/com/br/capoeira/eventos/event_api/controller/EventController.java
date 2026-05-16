@@ -1,9 +1,6 @@
 package com.br.capoeira.eventos.event_api.controller;
 
-import com.br.capoeira.eventos.event_api.dto.EventCreateRequestDto;
-import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
-import com.br.capoeira.eventos.event_api.dto.EventUpdateRequestDto;
-import com.br.capoeira.eventos.event_api.dto.UploadImageResponseDto;
+import com.br.capoeira.eventos.event_api.dto.*;
 import com.br.capoeira.eventos.event_api.service.EventService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -64,5 +61,13 @@ public class EventController {
         log.info("Event update requested");
         var event = eventService.updateEvent(eventDto);
         return ResponseEntity.ok(event);
+    }
+
+    @DeleteMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<Void> deleteEvent(@Valid @RequestBody EventDeleteRequestDto dto){
+        log.info("Event deleted requested");
+        eventService.deleteEventByTransactionId(dto);
+        return ResponseEntity.noContent().build();
     }
 }

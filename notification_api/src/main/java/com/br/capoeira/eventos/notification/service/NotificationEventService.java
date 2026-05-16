@@ -14,36 +14,36 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @AllArgsConstructor
-public class NotificationService {
+public class NotificationEventService {
 
-    private final FirebaseService firebaseService;
+    private final FirebaseEventService firebaseEventService;
 
     public void createNewEvent(EventRequestDto event) {
         log.info("Notify android that event: {} has been created", event);
-        firebaseService.addEvent(event);
-        firebaseService.sendEventNotification(event, Actions.CREATE, resolveTopic(event));
+        firebaseEventService.addEvent(event);
+        firebaseEventService.sendEventNotification(event, Actions.CREATE, resolveTopic(event));
     }
 
     public void updateEvent(EventRequestDto event) {
         log.info("Notify android that event: {} has been updated", event);
-        firebaseService.updateEvent(event);
-        firebaseService.sendEventNotification(event, Actions.UPDATE, resolveTopic(event));
+        firebaseEventService.updateEvent(event);
+        firebaseEventService.sendEventNotification(event, Actions.UPDATE, resolveTopic(event));
     }
 
     public void createErrorEvent(EventErrorDto event) {
         log.info("Notify android that event: {} was not created successfully, please try again", event);
-        firebaseService.sendEventNotification(event, Actions.ERROR_CREATE, resolveTopic(event));
+        firebaseEventService.sendEventNotification(event, Actions.ERROR_CREATE, resolveTopic(event));
     }
 
     public void updateErrorEvent(EventErrorDto event) {
         log.info("Notify android that event: {} was not updated successfully, please try again", event);
-        firebaseService.sendEventNotification(event, Actions.ERROR_UPDATE, resolveTopic(event));
+        firebaseEventService.sendEventNotification(event, Actions.ERROR_UPDATE, resolveTopic(event));
     }
 
     public void getAllEvents(List<EventRequestDto> events) {
         log.info("Notify android full sync for {} events", events.size());
 
-        firebaseService.addMultipleEventsBatch(events);
+        firebaseEventService.addMultipleEventsBatch(events);
 
         sendPublicSync(events);
         sendOrganizationSync(events);
@@ -64,7 +64,7 @@ public class NotificationService {
                 .events(publicEvents)
                 .build();
 
-        firebaseService.sendEventNotification(payload, Actions.GET_ALL, "public");
+        firebaseEventService.sendEventNotification(payload, Actions.GET_ALL, "public");
     }
 
     private void sendOrganizationSync(List<EventRequestDto> events) {
@@ -80,7 +80,7 @@ public class NotificationService {
                     .events(organizationEvents)
                     .build();
 
-            firebaseService.sendEventNotification(
+            firebaseEventService.sendEventNotification(
                     payload,
                     Actions.GET_ALL,
                     "org_" + organizationId
@@ -101,7 +101,7 @@ public class NotificationService {
                     .events(unitEvents)
                     .build();
 
-            firebaseService.sendEventNotification(
+            firebaseEventService.sendEventNotification(
                     payload,
                     Actions.GET_ALL,
                     "unit_" + unitId

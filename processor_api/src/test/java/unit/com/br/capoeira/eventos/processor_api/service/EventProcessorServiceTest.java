@@ -3,10 +3,10 @@ package unit.com.br.capoeira.eventos.processor_api.service;
 import com.br.capoeira.eventos.processor_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.processor_api.entities.Category;
 import com.br.capoeira.eventos.processor_api.mapper.EventMapper;
-import com.br.capoeira.eventos.processor_api.producer.ProcessorProducer;
+import com.br.capoeira.eventos.processor_api.producer.EventProcessorProducer;
 import com.br.capoeira.eventos.processor_api.repository.CategoryRepository;
 import com.br.capoeira.eventos.processor_api.repository.EventRepository;
-import com.br.capoeira.eventos.processor_api.service.ProcessorService;
+import com.br.capoeira.eventos.processor_api.service.EventProcessorService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.*;
 import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.*;
 
 @ExtendWith(MockitoExtension.class)
-class ProcessorServiceTest {
+class EventProcessorServiceTest {
 
     @Mock
     private EventRepository repository;
@@ -37,10 +37,10 @@ class ProcessorServiceTest {
     private EventMapper mapper;
 
     @Mock
-    private ProcessorProducer producer;
+    private EventProcessorProducer producer;
 
     @InjectMocks
-    private ProcessorService service;
+    private EventProcessorService service;
 
     @Test
     void whenFindAllShouldAddToQueue() {

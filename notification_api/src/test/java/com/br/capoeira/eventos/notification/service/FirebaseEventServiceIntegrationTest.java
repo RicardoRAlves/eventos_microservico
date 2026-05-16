@@ -21,11 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest(classes = {
-        FirebaseService.class,
-        FirebaseServiceIntegrationTest.FirestoreTestConfig.class
+        FirebaseEventService.class,
+        FirebaseEventServiceIntegrationTest.FirestoreTestConfig.class
 })
 @Testcontainers
-class FirebaseServiceIntegrationTest {
+class FirebaseEventServiceIntegrationTest {
 
     static FirestoreEmulatorContainer firestoreEmulator =
             new FirestoreEmulatorContainer(
@@ -37,7 +37,7 @@ class FirebaseServiceIntegrationTest {
     }
 
     @Autowired
-    private FirebaseService firebaseService;
+    private FirebaseEventService firebaseEventService;
 
     @Autowired
     private Firestore firestore;
@@ -66,7 +66,7 @@ class FirebaseServiceIntegrationTest {
         event.setTransactionId("tx-123");
         event.setTitle("Evento integração");
 
-        firebaseService.addEvent(event);
+        firebaseEventService.addEvent(event);
 
         var snapshot = firestore.collection(events_collection)
                 .document("tx-123")
