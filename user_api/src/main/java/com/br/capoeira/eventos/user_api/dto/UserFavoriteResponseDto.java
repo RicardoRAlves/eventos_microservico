@@ -18,6 +18,8 @@ public class UserFavoriteResponseDto {
 
     private Long eventId;
 
+    private String eventTransactionId;
+
     private EventScope eventScope;
 
     private Long organizationId;

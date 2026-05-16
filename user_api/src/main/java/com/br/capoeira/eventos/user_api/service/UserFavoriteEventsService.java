@@ -1,17 +1,20 @@
 package com.br.capoeira.eventos.user_api.service;
 
 import com.br.capoeira.eventos.user_api.config.exception.ValidationException;
+import com.br.capoeira.eventos.user_api.dto.EventDeleteRequestDto;
 import com.br.capoeira.eventos.user_api.dto.UserFavoriteCreateRequestDto;
 import com.br.capoeira.eventos.user_api.dto.UserFavoriteDeleteDto;
 import com.br.capoeira.eventos.user_api.dto.UserFavoriteResponseDto;
 import com.br.capoeira.eventos.user_api.mapper.UserFavoriteEventsMapper;
 import com.br.capoeira.eventos.user_api.repository.UserFavoriteEventsRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserFavoriteEventsService {
@@ -64,6 +67,35 @@ public class UserFavoriteEventsService {
                     dto.getEventId()
             );
         }
+    }
+
+    @Transactional
+    public void deleteFavoritesByEventTransactionId(
+            EventDeleteRequestDto dto
+    ) {
+        var eventTransactionId = dto.getTransactionId();
+
+        boolean exists = repository.existsByEventTransactionId(
+                eventTransactionId
+        );
+
+        if (!exists) {
+            log.info(
+                    "No favorite events found for eventTransactionId={}",
+                    eventTransactionId
+            );
+            return;
+        }
+
+        int affectedRows = repository.deleteAllByEventTransactionId(
+                eventTransactionId
+        );
+
+        log.info(
+                "Deleted {} favorite event records for eventTransactionId={}",
+                affectedRows,
+                eventTransactionId
+        );
     }
 
     private void validateCreateFavorite(

@@ -62,7 +62,4 @@ public class EventUpdateRequestDto {
 
     @NotNull(message = "User id must be informed")
     private Long userId;
-
-    @NotNull(message = "Active status must be informed")
-    private Boolean active;
 }

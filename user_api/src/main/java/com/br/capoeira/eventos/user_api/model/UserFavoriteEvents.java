@@ -20,7 +20,16 @@ import java.time.LocalDateTime;
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uk_user_favorite_event",
-                        columnNames = {"user_id", "event_id"}
+                        columnNames = {
+                                "user_id",
+                                "event_id"
+                        }
+                )
+        },
+        indexes = {
+                @Index(
+                        name = "idx_event_transaction_id",
+                        columnList = "event_transaction_id"
                 )
         }
 )
@@ -35,6 +44,9 @@ public class UserFavoriteEvents {
 
     @Column(name = "event_id", nullable = false)
     private Long eventId;
+
+    @Column(name = "event_transaction_id", nullable = false)
+    private String eventTransactionId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "event_scope", nullable = false)

@@ -1,6 +1,7 @@
 package com.br.capoeira.eventos.user_api.dto;
 
 import com.br.capoeira.eventos.user_api.model.EventScope;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -15,6 +16,9 @@ public class UserFavoriteCreateRequestDto {
 
     @NotNull(message = "Event id must be informed")
     private Long eventId;
+
+    @NotBlank(message = "Event transaction Id must be informed")
+    private String eventTransactionId;
 
     @NotNull(message = "Event scope must be informed")
     private EventScope eventScope;
