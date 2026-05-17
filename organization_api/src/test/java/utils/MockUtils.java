@@ -19,12 +19,25 @@ public class MockUtils {
 
     public static OrganizationCreateRequestDto getMockOrganizationCreateRequestDto() {
         var dto = new OrganizationCreateRequestDto();
+
         dto.setName("Grupo de Capoeira Nosso Senhor do Bonfim");
         dto.setDescription("Grupo tradicional de capoeira com atuação em diversas cidades.");
         dto.setLogoUrl("https://meusite.com/images/bonfim-logo.png");
         dto.setActive(true);
+        dto.setUserId(1L);
 
-        dto.setMainUnit(getMockMainUnitDto());
+        var mainUnit = new MainUnitDto();
+        mainUnit.setName("Matriz Jundiaí");
+        mainUnit.setDescription("Unidade principal do grupo.");
+        mainUnit.setCity("Jundiaí");
+        mainUnit.setState("SP");
+        mainUnit.setCountry("Brasil");
+        mainUnit.setAddress("Rua da Capoeira, 123");
+        mainUnit.setContactPhone("+55 11 99999-9999");
+        mainUnit.setContactEmail("jundiai@bonfim.com");
+        mainUnit.setActive(true);
+
+        dto.setMainUnit(mainUnit);
 
         return dto;
     }

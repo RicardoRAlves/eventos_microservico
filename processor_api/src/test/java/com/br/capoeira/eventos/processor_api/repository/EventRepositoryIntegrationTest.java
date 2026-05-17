@@ -54,6 +54,7 @@ class EventRepositoryIntegrationTest {
 
     private Event buildEvent(String transactionId, String title, Category category) {
         var event = new Event();
+
         event.setTransactionId(transactionId);
         event.setTitle(title);
         event.setDescription("desc");
@@ -62,10 +63,17 @@ class EventRepositoryIntegrationTest {
         event.setLocationName("loc");
         event.setAddress("addr");
         event.setTypeContact(TypeContact.INSTAGRAM);
-        event.setContact("@instagra");
+        event.setContact("@instagram");
+
         event.setActive(true);
         event.setScope(EventScope.PUBLIC);
+
         event.setCategory(category);
+
+        event.setOrganizationId(1L);
+        event.setOrganizationUnitId(1L);
+        event.setUserId(1L);
+
         return event;
     }
 }

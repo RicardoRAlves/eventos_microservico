@@ -1,5 +1,6 @@
 package com.br.capoeira.eventos.notification.consumer;
 
+import com.br.capoeira.eventos.notification.dto.EventDeleteRequestDto;
 import com.br.capoeira.eventos.notification.dto.EventErrorDto;
 import com.br.capoeira.eventos.notification.dto.EventRequestDto;
 import com.br.capoeira.eventos.notification.service.NotificationEventService;
@@ -45,5 +46,11 @@ public class NotificationEventListener {
     public void updateErrorEvent(EventErrorDto event){
         log.info("updateErrorEvent - Event received, {} ", event);
         service.updateErrorEvent(event);
+    }
+
+    @RabbitListener(queues = "${rabbitmq.queue.delete-notification.name}")
+    public void deleteEvent(EventDeleteRequestDto event){
+        log.info("delete - Event received, {} ", event);
+        service.deleteEvent(event);
     }
 }

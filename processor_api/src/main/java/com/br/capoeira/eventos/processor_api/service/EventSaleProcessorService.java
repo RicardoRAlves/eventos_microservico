@@ -7,6 +7,7 @@ import com.br.capoeira.eventos.processor_api.dto.EventSaleItemRequestDto;
 import com.br.capoeira.eventos.processor_api.entities.EventSaleItem;
 import com.br.capoeira.eventos.processor_api.mapper.EventSaleMapper;
 import com.br.capoeira.eventos.processor_api.producer.EventSaleProcessorProducer;
+import com.br.capoeira.eventos.processor_api.repository.EventRepository;
 import com.br.capoeira.eventos.processor_api.repository.EventSaleItemRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ import java.math.BigDecimal;
 public class EventSaleProcessorService {
 
     private final EventSaleItemRepository repository;
+    private final EventRepository eventRepository;
 
     private final EventSaleProcessorProducer producer;
 
@@ -40,7 +42,11 @@ public class EventSaleProcessorService {
                 return;
             }
 
+            var event = eventRepository.findTopByTransactionIdOrderByCreateAtDesc(dto.getEventTransactionId())
+                    .orElseThrow(() -> new ValidationException("Event not found"));
+
             validateEventSale(eventSale);
+            eventSale.setEvent(event);
             var savedEventSale = repository.save(eventSale);
             var responseDto = mapper.eventSaleItemToResponseDto(savedEventSale);
 

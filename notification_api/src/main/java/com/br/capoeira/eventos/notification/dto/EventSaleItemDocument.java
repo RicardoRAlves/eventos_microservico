@@ -11,8 +11,11 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventSaleItemDocument {
+    private Long id;
 
     private String transactionId;
+
+    private Long eventId;
 
     private String eventTransactionId;
 

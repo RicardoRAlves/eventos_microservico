@@ -2,6 +2,7 @@ package com.br.capoeira.eventos.processor_api.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -22,6 +23,10 @@ import java.time.LocalDateTime;
                 @Index(
                         name = "idx_event_sale_event_transaction_id",
                         columnList = "event_transaction_id"
+                ),
+                @Index(
+                        name = "idx_event_sale_event_id",
+                        columnList = "event_id"
                 )
         }
 )
@@ -38,6 +43,14 @@ public class EventSaleItem {
             length = 120
     )
     private String transactionId;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "event_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_event_sale_item_event")
+    )
+    private Event event;
 
     @Column(
             name = "event_transaction_id",
@@ -84,6 +97,10 @@ public class EventSaleItem {
         var now = LocalDateTime.now();
         createdAt = now;
         updatedAt = now;
+
+        if (active == null) {
+            active = true;
+        }
     }
 
     @PreUpdate

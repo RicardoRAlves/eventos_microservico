@@ -406,8 +406,9 @@ class EventServiceTest {
                 "https://image.com/evento.png",
                 "Capoeira",
                 EventScope.ORGANIZATION_UNIT,
-                1L,
-                10L
+                1L,   // userId
+                1L,   // organizationId
+                10L   // organizationUnitId
         );
     }
 
@@ -427,7 +428,7 @@ class EventServiceTest {
                 EventScope.ORGANIZATION_UNIT,
                 1L,
                 10L,
-                true
+                1L
         );
     }
 

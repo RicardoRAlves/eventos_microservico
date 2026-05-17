@@ -1,9 +1,12 @@
 package com.br.capoeira.eventos.processor_api.producer;
 
 import com.br.capoeira.eventos.processor_api.consumer.ProcessorEventListener;
+import com.br.capoeira.eventos.processor_api.consumer.ProcessorEventSaleListener;
 import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
 import com.br.capoeira.eventos.processor_api.dto.EventResponseDto;
+import com.br.capoeira.eventos.processor_api.repository.EventSaleItemRepository;
 import com.br.capoeira.eventos.processor_api.service.EventProcessorService;
+import com.br.capoeira.eventos.processor_api.service.EventSaleProcessorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.BindingBuilder;
@@ -14,6 +17,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -27,10 +31,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventRequestDto;
 import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMockEventResponseDto;
 
-@SpringBootTest(properties = {
-        "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
-})
+@SpringBootTest(
+        properties = {
+                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
+        }
+)
 @Testcontainers
+@ActiveProfiles("test")
 public class EventProcessorProducerIntegrationTest {
 
     @Value("${rabbitmq.exchange.create-notification.name}")
@@ -72,6 +79,15 @@ public class EventProcessorProducerIntegrationTest {
 
     @MockitoBean
     private EventProcessorService eventProcessorService;
+
+    @MockitoBean
+    private EventSaleProcessorService eventSaleProcessorService;
+
+    @MockitoBean
+    private EventSaleItemRepository eventSaleItemRepository;
+
+    @MockitoBean
+    private ProcessorEventSaleListener processorEventSaleListener;
 
     private final String createQueueName = "test.queue.create";
 

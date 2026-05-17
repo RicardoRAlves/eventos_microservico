@@ -11,6 +11,7 @@ import org.mapstruct.MappingTarget;
 public interface EventSaleMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "event", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     EventSaleItem requestDtoToEventSaleItem(
@@ -18,6 +19,9 @@ public interface EventSaleMapper {
     );
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "event", ignore = true)
+    @Mapping(target = "transactionId", ignore = true)
+    @Mapping(target = "eventTransactionId", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     void updateRequestDtoToEventSaleItem(
@@ -25,6 +29,7 @@ public interface EventSaleMapper {
             @MappingTarget EventSaleItem eventSale
     );
 
+    @Mapping(target = "eventId", source = "event.id")
     EventSaleItemResponseDto eventSaleItemToResponseDto(
             EventSaleItem eventSaleItem
     );

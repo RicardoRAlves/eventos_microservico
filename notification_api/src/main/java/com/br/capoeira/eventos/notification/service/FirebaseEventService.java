@@ -1,5 +1,6 @@
 package com.br.capoeira.eventos.notification.service;
 
+import com.br.capoeira.eventos.notification.dto.EventDeleteRequestDto;
 import com.br.capoeira.eventos.notification.dto.EventRequestDto;
 import com.br.capoeira.eventos.notification.dto.enums.Actions;
 import com.br.capoeira.eventos.notification.mapper.EventMapper;
@@ -56,6 +57,58 @@ public class FirebaseEventService {
         } catch (Exception e) {
             log.error("Error adding events batch to Firebase: {}", e.getMessage(), e);
             throw new RuntimeException("Error adding events batch", e);
+        }
+    }
+
+    public void deleteEvent(EventDeleteRequestDto event) {
+        validateDeleteEvent(event);
+        try {
+            var transactionId = event.getTransactionId();
+
+            DocumentReference docRef = getDocumentReference(transactionId);
+
+            ApiFuture<DocumentSnapshot> documentFuture = docRef.get();
+            DocumentSnapshot documentSnapshot = documentFuture.get();
+
+            if (!documentSnapshot.exists()) {
+                log.info(
+                        "Event document not found on Firestore. transactionId={}",
+                        transactionId
+                );
+                return;
+            }
+
+            ApiFuture<WriteResult> updateFuture = docRef.update("active", false);
+
+            WriteResult result = updateFuture.get();
+
+            log.info(
+                    "Event {} marked as inactive on Firestore at {}",
+                    transactionId,
+                    result.getUpdateTime()
+            );
+
+        } catch (Exception e) {
+            log.error(
+                    "Error deleting event on Firebase: {}",
+                    e.getMessage(),
+                    e
+            );
+
+            throw new RuntimeException(
+                    "Error trying to delete event",
+                    e
+            );
+        }
+    }
+
+    private void validateDeleteEvent(EventDeleteRequestDto event) {
+        if (event == null) {
+            throw new IllegalArgumentException("Event delete request must be informed");
+        }
+
+        if (event.getTransactionId() == null || event.getTransactionId().isBlank()) {
+            throw new IllegalArgumentException("Transaction id must be informed");
         }
     }
 

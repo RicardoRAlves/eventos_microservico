@@ -1,6 +1,9 @@
 package com.br.capoeira.eventos.user_api.config;
 
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -18,10 +21,23 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.exchange.delete-notification.name}")
     private String exchangeDeleteName;
 
+    @Value("${rabbitmq.exchange.sale.create-reservation.name}")
+    private String exchangeCreateReservationName;
+
+    @Value("${rabbitmq.exchange.sale.create-reservation-processor.name}")
+    private String exchangeCreateReservationProcessorName;
+
+    @Value("${rabbitmq.exchange.sale.delete-notification.name}")
+    private String exchangeDeleteSaleName;
+
     @Value("${rabbitmq.queue.delete-favorite.name}")
     private String queueDeleteFavorite;
 
+    @Value("${rabbitmq.queue.create-reservation.name}")
+    private String queueCreateReservation;
 
+    @Value("${rabbitmq.queue.delete-reservation.name}")
+    private String queueDeleteReservation;
 
     @Bean
     public FanoutExchange deleteExchange(){
@@ -29,11 +45,40 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public FanoutExchange CreateReservationExchange(){
+        return new FanoutExchange(exchangeCreateReservationName);
+    }
+
+    @Bean
+    public FanoutExchange createReservationProcessorExchange(){
+        return new FanoutExchange(exchangeCreateReservationProcessorName);
+    }
+
+    @Bean
+    public FanoutExchange deleteReservationExchange(){
+        return new FanoutExchange(exchangeDeleteSaleName);
+    }
+
+    @Bean
     public Queue queueDeleteFavorite(){ return new Queue(queueDeleteFavorite);}
+
+    @Bean
+    public Queue queueCreateReservation(){ return new Queue(queueCreateReservation);}
+
+    @Bean
+    public Queue queueDeleteReservation(){ return new Queue(queueDeleteReservation);}
 
 
     @Bean
-    public Binding binding() { return BindingBuilder.bind(queueDeleteFavorite()).to(deleteExchange());
+    public Binding bindingDeleteFavorite() { return BindingBuilder.bind(queueDeleteFavorite()).to(deleteExchange());
+    }
+
+    @Bean
+    public Binding bindingCreateReservation() { return BindingBuilder.bind(queueCreateReservation()).to(CreateReservationExchange());
+    }
+
+    @Bean
+    public Binding bindingDeleteReservation() { return BindingBuilder.bind(queueDeleteReservation()).to(deleteReservationExchange());
     }
 
     @Bean

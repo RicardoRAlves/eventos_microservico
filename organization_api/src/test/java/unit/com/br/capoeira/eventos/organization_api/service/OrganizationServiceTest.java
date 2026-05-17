@@ -1,12 +1,15 @@
 package unit.com.br.capoeira.eventos.organization_api.service;
 
-import com.br.capoeira.eventos.organization_api.dto.OrganizationCreateRequestDto;
 import com.br.capoeira.eventos.organization_api.config.exception.ValidationException;
+import com.br.capoeira.eventos.organization_api.dto.OrganizationCreateRequestDto;
+import com.br.capoeira.eventos.organization_api.dto.PromoteToSuperAdminDtoRequest;
+import com.br.capoeira.eventos.organization_api.dto.UserResponseDto;
 import com.br.capoeira.eventos.organization_api.mapper.OrganizationMapper;
 import com.br.capoeira.eventos.organization_api.model.Organization;
 import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationRepository;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationUnitRepository;
+import com.br.capoeira.eventos.organization_api.restClient.UserClient;
 import com.br.capoeira.eventos.organization_api.service.OrganizationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,40 +42,87 @@ class OrganizationServiceTest {
     @Mock
     private OrganizationUnitRepository organizationUnitRepository;
 
+    @Mock
+    private UserClient userClient;
+
     @InjectMocks
     private OrganizationService service;
 
     @Test
     void shouldCreateOrganizationWithMainUnit() {
         var requestDto = getMockOrganizationCreateRequestDto();
+
         var organization = getMockOrganization();
+
         var savedOrganization = getMockOrganization();
         savedOrganization.setId(1L);
 
         var organizationResponseDto = getMockOrganizationResponseDto();
 
-        when(mapper.organizationDtoToOrganization(any(OrganizationCreateRequestDto.class))).thenReturn(organization);
-        when(organizationRepository.save(any(Organization.class))).thenReturn(savedOrganization);
-        when(organizationUnitRepository.existsByJoinCode(anyString())).thenReturn(false);
-        when(organizationUnitRepository.save(any(OrganizationUnit.class))).thenAnswer(invocation -> {
-            var unit = invocation.getArgument(0, OrganizationUnit.class);
-            unit.setId(1L);
-            return unit;
-        });
-        //when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(savedOrganization));
-        when(mapper.organizationToResponseDto(any(Organization.class))).thenReturn(organizationResponseDto);
+        when(mapper.organizationDtoToOrganization(any(OrganizationCreateRequestDto.class)))
+                .thenReturn(organization);
+
+        when(organizationRepository.save(any(Organization.class)))
+                .thenReturn(savedOrganization);
+
+        when(organizationUnitRepository.existsByJoinCode(anyString()))
+                .thenReturn(false);
+
+        when(organizationUnitRepository.save(any(OrganizationUnit.class)))
+                .thenAnswer(invocation -> {
+                    var unit = invocation.getArgument(0, OrganizationUnit.class);
+                    unit.setId(1L);
+                    return unit;
+                });
+
+        when(userClient.promoteToSuperAdmin(any(PromoteToSuperAdminDtoRequest.class)))
+                .thenAnswer(invocation -> {
+                    var request = invocation.getArgument(
+                            0,
+                            PromoteToSuperAdminDtoRequest.class
+                    );
+
+                    var user = new UserResponseDto();
+                    user.setId(request.userId());
+                    user.setOrganizationId(request.organizationId());
+                    user.setOrganizationUnitId(request.organizationUnitId());
+
+                    return user;
+                });
+
+        when(mapper.organizationToResponseDto(any(Organization.class)))
+                .thenReturn(organizationResponseDto);
 
         var result = service.createWithMainUnit(requestDto);
 
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(organizationResponseDto.getId());
+        assertThat(result.getId()).isEqualTo(
+                organizationResponseDto.getId()
+        );
 
-        verify(mapper).organizationDtoToOrganization(any(OrganizationCreateRequestDto.class));
-        verify(organizationRepository).save(any(Organization.class));
-        verify(organizationUnitRepository).existsByJoinCode(anyString());
-        verify(organizationUnitRepository).save(any(OrganizationUnit.class));
-        //verify(organizationRepository).findById(anyLong());
-        verify(mapper).organizationToResponseDto(any(Organization.class));
+        verify(mapper).organizationDtoToOrganization(
+                any(OrganizationCreateRequestDto.class)
+        );
+
+        verify(organizationRepository).save(
+                any(Organization.class)
+        );
+
+        verify(organizationUnitRepository).existsByJoinCode(
+                anyString()
+        );
+
+        verify(organizationUnitRepository).save(
+                any(OrganizationUnit.class)
+        );
+
+        verify(userClient).promoteToSuperAdmin(
+                any(PromoteToSuperAdminDtoRequest.class)
+        );
+
+        verify(mapper).organizationToResponseDto(
+                any(Organization.class)
+        );
     }
 
     @Test

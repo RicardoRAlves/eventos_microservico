@@ -1,8 +1,11 @@
 package com.br.capoeira.eventos.notification.consumer;
 
 import com.br.capoeira.eventos.notification.dto.Event;
+import com.br.capoeira.eventos.notification.service.FirebaseEventSaleItemService;
 import com.br.capoeira.eventos.notification.service.FirebaseEventService;
+import com.br.capoeira.eventos.notification.service.NotificationEventSaleService;
 import com.br.capoeira.eventos.notification.service.NotificationEventService;
+import com.google.cloud.firestore.Firestore;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -54,6 +57,18 @@ public class NotificationEventListenerIntegrationTest {
 
     @MockitoBean
     private FirebaseEventService firebaseEventService;
+
+    @MockitoBean
+    private NotificationEventSaleService notificationEventSaleService;
+
+    @MockitoBean
+    private FirebaseEventSaleItemService firebaseEventSaleItemService;
+
+    @MockitoBean
+    private Firestore firestore;
+
+    @MockitoBean
+    private NotificationEventSaleListener notificationEventSaleListener;
 
     @Value("${rabbitmq.queue.create-notification.name}")
     private String createNotificationName;

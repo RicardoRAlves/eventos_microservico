@@ -91,6 +91,16 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.exchange.sale.delete-notification.name}")
     private String exchangeDeleteSaleNotification;
 
+    //Reservation Sale
+    @Value("${rabbitmq.exchange.sale.create-reservation-processor.name}")
+    private String exchangeCreateReservationSaleName;
+
+    @Value("${rabbitmq.exchange.sale.create-reservation.name}")
+    private String reserveEventSaleExchange;
+
+    @Value("${rabbitmq.queue.sale.create-reservation-processor.name}")
+    private String queueCreateReservationSaleName;
+
     @Bean
     public FanoutExchange eventCreateExchange(){
         return new FanoutExchange(exchangeCreateName);
@@ -171,6 +181,17 @@ public class RabbitMqConfig {
         return new FanoutExchange(exchangeDeleteSaleNotification);
     }
 
+    //Reservation
+    @Bean
+    public FanoutExchange reservationEventSaleCreateExchange(){
+        return new FanoutExchange(exchangeCreateReservationSaleName);
+    }
+
+    @Bean
+    public FanoutExchange reservationUserEventSaleCreateExchange(){
+        return new FanoutExchange(reserveEventSaleExchange);
+    }
+
     // Queue
 
     @Bean
@@ -208,6 +229,12 @@ public class RabbitMqConfig {
         return new Queue(queueDeleteSaleName);
     }
 
+    //Reservation
+    @Bean
+    public Queue processorQueueCreateReservationSale() {
+        return new Queue(queueCreateReservationSaleName);
+    }
+
     @Bean
     public Binding bindingQueueCreate(){
         return BindingBuilder.bind(processorQueueCreate()).to(eventCreateExchange());
@@ -241,6 +268,12 @@ public class RabbitMqConfig {
     @Bean
     public Binding bindingQueueDeleteSale(){
         return BindingBuilder.bind(processorQueueDeleteSale()).to(deleteSaleExchange());
+    }
+
+    //Reservation
+    @Bean
+    public Binding bindingQueueCreateReservationSale(){
+        return BindingBuilder.bind(processorQueueCreateReservationSale()).to(reservationEventSaleCreateExchange());
     }
 
     @Bean

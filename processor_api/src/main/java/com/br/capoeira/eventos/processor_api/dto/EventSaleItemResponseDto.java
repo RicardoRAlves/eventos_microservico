@@ -11,8 +11,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventSaleItemResponseDto {
+    private Long id;
 
     private String transactionId;
+
+    private Long eventId;
 
     private String eventTransactionId;
 

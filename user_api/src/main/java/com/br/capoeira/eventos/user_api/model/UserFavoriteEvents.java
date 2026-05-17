@@ -1,11 +1,7 @@
 package com.br.capoeira.eventos.user_api.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.*;
 import jakarta.persistence.*;
-
-import org.hibernate.annotations.CreationTimestamp;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
@@ -58,7 +54,11 @@ public class UserFavoriteEvents {
     @Column(name = "organization_unit_id")
     private Long organizationUnitId;
 
-    @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        createdAt = LocalDateTime.now();
+    }
 }

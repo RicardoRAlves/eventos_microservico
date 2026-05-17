@@ -30,6 +30,12 @@ public class NotificationEventService {
         firebaseEventService.sendEventNotification(event, Actions.UPDATE, resolveTopic(event));
     }
 
+    public void deleteEvent(EventDeleteRequestDto event) {
+        log.info("Notify android that event: {} has been delete", event);
+        firebaseEventService.deleteEvent(event);
+        firebaseEventService.sendEventNotification(event, Actions.DELETED, deleteTopic());
+    }
+
     public void createErrorEvent(EventErrorDto event) {
         log.info("Notify android that event: {} was not created successfully, please try again", event);
         firebaseEventService.sendEventNotification(event, Actions.ERROR_CREATE, resolveTopic(event));
@@ -107,6 +113,10 @@ public class NotificationEventService {
                     "unit_" + unitId
             );
         });
+    }
+
+    private String deleteTopic(){
+        return "delete_event";
     }
 
     private String resolveTopic(EventTopicPayload event) {

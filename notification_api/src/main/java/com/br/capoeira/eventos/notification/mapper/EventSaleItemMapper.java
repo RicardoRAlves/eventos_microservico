@@ -19,7 +19,8 @@ public final class EventSaleItemMapper {
     ) {
 
         EventSaleItemDocument doc = new EventSaleItemDocument();
-
+        doc.setId(eventSaleItem.getId());
+        doc.setEventId(eventSaleItem.getEventId());
         doc.setTransactionId(eventSaleItem.getTransactionId());
         doc.setEventTransactionId(eventSaleItem.getEventTransactionId());
         doc.setDescription(eventSaleItem.getDescription());

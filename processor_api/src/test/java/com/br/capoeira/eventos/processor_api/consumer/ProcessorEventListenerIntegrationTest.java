@@ -1,6 +1,8 @@
 package com.br.capoeira.eventos.processor_api.consumer;
 
+import com.br.capoeira.eventos.processor_api.repository.EventSaleItemRepository;
 import com.br.capoeira.eventos.processor_api.service.EventProcessorService;
+import com.br.capoeira.eventos.processor_api.service.EventSaleProcessorService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.core.Queue;
@@ -9,6 +11,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -28,6 +31,7 @@ import static unit.com.br.capoeira.eventos.processor_api.service.MockUtils.getMo
         "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration"
 })
 @Testcontainers
+@ActiveProfiles("test")
 public class ProcessorEventListenerIntegrationTest {
 
     @Container
@@ -45,6 +49,15 @@ public class ProcessorEventListenerIntegrationTest {
 
     @Autowired
     private RabbitAdmin rabbitAdmin;
+
+    @MockitoBean
+    private ProcessorEventSaleListener processorEventSaleListener;
+
+    @MockitoBean
+    private EventSaleProcessorService eventSaleProcessorService;
+
+    @MockitoBean
+    private EventSaleItemRepository eventSaleItemRepository;
 
     @MockitoBean
     private EventProcessorService service;
