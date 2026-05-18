@@ -147,7 +147,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: rabbitmq
+      RABBIT_PASSWORD: rabbitmq
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: user_api
