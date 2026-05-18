@@ -30,10 +30,6 @@ public class OrganizationUnit {
 
     @NotNull
     @Column(nullable = false)
-    private String slug;
-
-    @NotNull
-    @Column(nullable = false)
     private String description;
 
     @NotNull

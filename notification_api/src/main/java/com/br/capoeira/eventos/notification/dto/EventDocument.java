@@ -25,6 +25,7 @@ public class EventDocument {
     private String image;
     private String categoryName;
     private EventScope scope;
+    private Long userId;
     private Long organizationId;
     private Long organizationUnitId;
     private Boolean active;

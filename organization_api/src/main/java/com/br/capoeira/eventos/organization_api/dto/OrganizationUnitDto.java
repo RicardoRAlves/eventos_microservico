@@ -17,9 +17,6 @@ public class OrganizationUnitDto {
     @NotBlank(message = "Unit name must be informed")
     private String name;
 
-    @NotBlank(message = "Unit slug must be informed")
-    private String slug;
-
     @NotBlank(message = "Unit description must be informed")
     private String description;
 

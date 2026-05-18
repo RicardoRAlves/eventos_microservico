@@ -38,6 +38,7 @@ public class EventRequestDto implements EventTopicPayload {
 
     private EventScope scope;
 
+    private Long userId;
     private Long organizationId;
     private Long organizationUnitId;
 

@@ -54,10 +54,12 @@ public class EventUpdateRequestDto {
     @NotNull(message = "Event scope must be informed")
     private EventScope scope;
 
+    @NotNull(message = "Organization id must be informed")
     private Long organizationId;
 
+    @NotNull(message = "Organization Unit id must be informed")
     private Long organizationUnitId;
 
-    @NotNull(message = "Active status must be informed")
-    private Boolean active;
+    @NotNull(message = "User id must be informed")
+    private Long userId;
 }

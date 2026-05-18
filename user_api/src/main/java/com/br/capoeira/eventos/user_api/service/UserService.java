@@ -3,11 +3,13 @@ package com.br.capoeira.eventos.user_api.service;
 
 import com.br.capoeira.eventos.user_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.user_api.dto.*;
+import com.br.capoeira.eventos.user_api.enums.Role;
 import com.br.capoeira.eventos.user_api.mapper.UserMapper;
 import com.br.capoeira.eventos.user_api.model.User;
 import com.br.capoeira.eventos.user_api.repository.UserRepository;
 import com.br.capoeira.eventos.user_api.restClient.OrganizationClient;
 import com.br.capoeira.eventos.user_api.service.aws.S3Service;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import static org.springframework.util.ObjectUtils.isEmpty;
 import static org.springframework.util.StringUtils.hasText;
 
 
@@ -38,14 +41,36 @@ public class UserService {
         return mapper.userToResponseDto(getUserByIdOrThrow(id));
     }
 
+    public UserResponseDto findByEmail(String email) {
+        return mapper.userToResponseDto(getUserByEmailOrThrow(email));
+    }
+
     public PageResponseDto<UserResponseDto> findAllByOrganizationId(
             Long organizationId,
+            Long organizationUnitId,
+            Boolean active,
+            Role role,
+            String sortBy,
+            String direction,
             int page,
-            int size) {
+            int size
+    ) {
         validateId(organizationId, "Organization Id must be informed");
-        var pageable = PageRequest.of(page, size, Sort.by("id").ascending());
 
-        var userPage = repository.findAllByOrganizationIdOrderByIdAsc(organizationId, pageable);
+        var pageable = PageRequest.of(
+                page,
+                size,
+                buildSort(sortBy, direction)
+        );
+
+        var specification = UserSpecification.byFilters(
+                organizationId,
+                organizationUnitId,
+                active,
+                role
+        );
+
+        var userPage = repository.findAll(specification, pageable);
 
         var content = userPage
                 .stream()
@@ -64,13 +89,29 @@ public class UserService {
 
     public PageResponseDto<UserResponseDto> findAllByOrganizationUnitId(
             Long organizationUnitId,
+            Boolean active,
+            Role role,
+            String sortBy,
+            String direction,
             int page,
             int size
     ) {
         validateId(organizationUnitId, "Organization Unit Id must be informed");
-        var pageable = PageRequest.of(page, size, Sort.by("id").ascending());
 
-        var userPage =  repository.findAllByOrganizationUnitIdOrderByIdAsc(organizationUnitId, pageable);
+        var pageable = PageRequest.of(
+                page,
+                size,
+                buildSort(sortBy, direction)
+        );
+
+        var specification = UserSpecification.byFilters(
+                null,
+                organizationUnitId,
+                active,
+                role
+        );
+
+        var userPage = repository.findAll(specification, pageable);
 
         var content = userPage
                 .stream()
@@ -93,8 +134,7 @@ public class UserService {
         validateEmailAlreadyExists(dto.getEmail());
 
         User user = mapper.createRequestDtoToUser(dto);
-        applyJoinCodeIfNecessary(user, dto.getJoinCode());
-
+        user.setRole(Role.CLIENT);
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
         user.setActive(true);
 
@@ -109,7 +149,6 @@ public class UserService {
         User savedUser = getUserByIdOrThrow(dto.getId());
 
         updateUserFields(savedUser, dto);
-        applyJoinCodeIfNecessary(savedUser, dto.getJoinCode());
 
         User updatedUser = repository.save(savedUser);
         return mapper.userToResponseDto(updatedUser);
@@ -123,6 +162,19 @@ public class UserService {
 
         User savedUser = getUserByIdOrThrow(dto.getId());
         savedUser.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        User updatedUser = repository.save(savedUser);
+        return mapper.userToResponseDto(updatedUser);
+    }
+
+    @Transactional
+    public UserResponseDto joinCode(UserJoinCodeRequestDto dto) {
+        if (dto == null) {
+            throw new ValidationException("Request must be informed");
+        }
+
+        User savedUser = getUserByIdOrThrow(dto.getId());
+        applyJoinCode(savedUser, dto.getJoinCode());
 
         User updatedUser = repository.save(savedUser);
         return mapper.userToResponseDto(updatedUser);
@@ -170,12 +222,12 @@ public class UserService {
     }
 
     @Transactional
-    public UserResponseDto reactivateUser(String email) {
-        if (!hasText(email)) {
-            throw new ValidationException("Email must be informed");
+    public UserResponseDto reactivateUser(Long id) {
+        if (id == null) {
+            throw new ValidationException("Id must be informed");
         }
 
-        User savedUser = repository.findByEmail(email)
+        User savedUser = repository.findById(id)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         savedUser.setActive(true);
@@ -191,6 +243,20 @@ public class UserService {
         return s3Service.uploadFile(file).toString();
     }
 
+    @Transactional
+    public UserResponseDto promoteToSuperAdmin(PromoteToSuperAdminDtoRequest request) {
+        User user = repository.findById(request.userId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found"));
+
+        user.setRole(Role.SUPER_ADMIN);
+        user.setOrganizationId(request.organizationId());
+        user.setOrganizationUnitId(request.organizationUnitId());
+
+        User savedUser = repository.save(user);
+
+        return mapper.userToResponseDto(savedUser);
+    }
+
     private User getUserByIdOrThrow(Long id) {
         validateId(id, "Id must be informed");
 
@@ -198,8 +264,21 @@ public class UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 
+    private User getUserByEmailOrThrow(String email) {
+        validateEmail(email, "Email must be informed");
+
+        return repository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
     private void validateId(Long id, String message) {
         if (id == null) {
+            throw new ValidationException(message);
+        }
+    }
+
+    private void validateEmail(String email, String message) {
+        if (isEmpty(email)) {
             throw new ValidationException(message);
         }
     }
@@ -230,17 +309,35 @@ public class UserService {
         }
     }
 
-    private void applyJoinCodeIfNecessary(User user, String joinCode) {
+    private void applyJoinCode(User user, String joinCode) {
         if (user.getOrganizationId() == null && hasText(joinCode)) {
             var org = organizationClient.getByJoinCode(joinCode);
 
             user.setOrganizationId(org.getOrganizationId());
             user.setOrganizationUnitId(org.getOrganizationUnitId());
+        } else {
+            throw new ValidationException("User is already added to Organization " + user.getOrganizationId());
         }
     }
 
     private void updateUserFields(User user, UserUpdateRequestDto dto) {
         user.setName(dto.getName());
         user.setAvatarUrl(dto.getAvatarUrl());
+    }
+
+    private Sort buildSort(String sortBy, String direction) {
+        var safeSortBy = switch (sortBy == null ? "name" : sortBy) {
+            case "name" -> "name";
+            case "active" -> "active";
+            case "organizationUnitId" -> "organizationUnitId";
+            default -> "name";
+        };
+
+        var sortDirection = "desc".equalsIgnoreCase(direction)
+                ? Sort.Direction.DESC
+                : Sort.Direction.ASC;
+
+        return Sort.by(sortDirection, safeSortBy)
+                .and(Sort.by(Sort.Direction.ASC, "id"));
     }
 }

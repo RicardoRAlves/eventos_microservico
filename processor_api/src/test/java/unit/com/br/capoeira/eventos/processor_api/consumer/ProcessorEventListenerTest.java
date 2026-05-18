@@ -1,7 +1,7 @@
 package unit.com.br.capoeira.eventos.processor_api.consumer;
 
 import com.br.capoeira.eventos.processor_api.consumer.ProcessorEventListener;
-import com.br.capoeira.eventos.processor_api.service.ProcessorService;
+import com.br.capoeira.eventos.processor_api.service.EventProcessorService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,7 +18,7 @@ public class ProcessorEventListenerTest {
 
 
     @Mock
-    private ProcessorService service;
+    private EventProcessorService service;
 
     @InjectMocks
     private ProcessorEventListener listener;

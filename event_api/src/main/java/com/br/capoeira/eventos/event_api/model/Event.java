@@ -39,6 +39,7 @@ public class Event {
     private String categoryName;
 
     private EventScope scope;
+    private Long userId;
     private Long organizationId;
     private Long organizationUnitId;
 

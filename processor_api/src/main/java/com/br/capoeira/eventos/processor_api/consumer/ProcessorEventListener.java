@@ -1,7 +1,8 @@
 package com.br.capoeira.eventos.processor_api.consumer;
 
+import com.br.capoeira.eventos.processor_api.dto.EventDeleteRequestDto;
 import com.br.capoeira.eventos.processor_api.dto.EventRequestDto;
-import com.br.capoeira.eventos.processor_api.service.ProcessorService;
+import com.br.capoeira.eventos.processor_api.service.EventProcessorService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -12,7 +13,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ProcessorEventListener {
 
-    private final ProcessorService service;
+    private final EventProcessorService service;
 
     @RabbitListener(queues = "${rabbitmq.create.queue.name}")
     public void saveEvent(EventRequestDto dto){
@@ -30,5 +31,11 @@ public class ProcessorEventListener {
     public void updateEvents(EventRequestDto dto){
         log.info("updating event {} ", dto.getTransactionId());
         service.updateEvent(dto);
+    }
+
+    @RabbitListener(queues = "${rabbitmq.delete.queue.name}")
+    public void deleteEvents(EventDeleteRequestDto dto){
+        log.info("deleting event {} ", dto.getTransactionId());
+        service.deleteEvent(dto);
     }
 }

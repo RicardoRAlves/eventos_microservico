@@ -18,5 +18,4 @@ public class UserUpdateRequestDto {
     private String name;
     @NotBlank(message = "Avatar Url must be informed")
     private String avatarUrl;
-    private String joinCode;
 }

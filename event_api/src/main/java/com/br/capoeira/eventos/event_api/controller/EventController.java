@@ -1,8 +1,6 @@
 package com.br.capoeira.eventos.event_api.controller;
 
-import com.br.capoeira.eventos.event_api.dto.EventCreateRequestDto;
-import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
-import com.br.capoeira.eventos.event_api.dto.EventUpdateRequestDto;
+import com.br.capoeira.eventos.event_api.dto.*;
 import com.br.capoeira.eventos.event_api.service.EventService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -27,13 +25,14 @@ public class EventController {
     private final EventService eventService;
 
     @GetMapping("/all")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<String> requestAllEvents() {
         eventService.findAllEvents();
         return ResponseEntity.ok("Request sent to queue");
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<EventResponseDto> createEvent(
             @Valid @RequestBody EventCreateRequestDto eventDto) {
         log.info("New event creation requested");
@@ -42,8 +41,8 @@ public class EventController {
     }
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<String> uploadImage(
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<UploadImageResponseDto> uploadImage(
             @Parameter(
                     description = "Select the image for upload",
                     schema = @Schema(type = "string", format = "binary")
@@ -51,15 +50,24 @@ public class EventController {
             @RequestParam("image") MultipartFile file
     ) {
         var photoPath = eventService.updatePhoto(file);
-        return ResponseEntity.ok(photoPath);
+        log.info("returning image {}", photoPath);
+        return ResponseEntity.ok(new UploadImageResponseDto(photoPath));
     }
 
     @PutMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<EventResponseDto> updateEvent(
             @Valid @RequestBody EventUpdateRequestDto eventDto) {
         log.info("Event update requested");
         var event = eventService.updateEvent(eventDto);
         return ResponseEntity.ok(event);
+    }
+
+    @DeleteMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<Void> deleteEvent(@Valid @RequestBody EventDeleteRequestDto dto){
+        log.info("Event deleted requested");
+        eventService.deleteEventByTransactionId(dto);
+        return ResponseEntity.noContent().build();
     }
 }

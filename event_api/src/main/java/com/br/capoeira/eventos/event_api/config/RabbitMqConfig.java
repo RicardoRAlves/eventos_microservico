@@ -30,8 +30,20 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.exchange.update.name}")
     private String exchangeUpdate;
 
+    @Value("${rabbitmq.exchange.delete.name}")
+    private String exchangeDelete;
+
     @Value("${rabbitmq.create.error.queue.name}")
     private String queueErrorCreate;
+
+    @Value("${rabbitmq.exchange.sale.create.name}")
+    private String exchangeCreateSaleProcessor;
+
+    @Value("${rabbitmq.exchange.sale.update.name}")
+    private String exchangeUpdateSaleProcessor;
+
+    @Value("${rabbitmq.exchange.sale.delete.name}")
+    private String exchangeDeleteSaleProcessor;
 
     @Bean
     public Exchange createExchange(){
@@ -56,6 +68,26 @@ public class RabbitMqConfig {
     @Bean
     public Exchange updateExchange(){
         return new FanoutExchange(exchangeUpdate);
+    }
+
+    @Bean
+    public Exchange deleteExchange(){
+        return new FanoutExchange(exchangeDelete);
+    }
+
+    @Bean
+    public Exchange createSaleExchange(){
+        return new FanoutExchange(exchangeCreateSaleProcessor);
+    }
+
+    @Bean
+    public Exchange updateSaleExchange(){
+        return new FanoutExchange(exchangeUpdateSaleProcessor);
+    }
+
+    @Bean
+    public Exchange deleteSaleExchange(){
+        return new FanoutExchange(exchangeDeleteSaleProcessor);
     }
 
     @Bean

@@ -22,7 +22,7 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<PageResponseDto<CategoryResponseDto>> findAll(
             @Parameter(description = "Page number, starts at 0")
             @RequestParam(defaultValue = "0") int page,
@@ -35,7 +35,7 @@ public class CategoryController {
     }
 
     @GetMapping("/id/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<CategoryResponseDto> findById(@PathVariable Long id) {
         log.info("Finding Category by id {}", id);
         var category = categoryService.findById(id);
@@ -43,7 +43,7 @@ public class CategoryController {
     }
 
     @GetMapping("/name/{name}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<CategoryResponseDto> findByName(@PathVariable String name) {
         log.info("Finding Category by name {}", name);
         var category = categoryService.findByName(name);
@@ -51,7 +51,7 @@ public class CategoryController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<CategoryResponseDto> createCategory(
             @Valid @RequestBody CategoryCreateRequestDto dto) {
         log.info("Creating Category {}", dto);
@@ -60,7 +60,7 @@ public class CategoryController {
     }
 
     @PutMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<CategoryResponseDto> updateCategory(
             @Valid @RequestBody CategoryUpdateRequestDto dto) {
         log.info("Updating Category {}", dto);
@@ -69,7 +69,7 @@ public class CategoryController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<CategoryResponseDto> deleteCategory(@PathVariable Long id) {
         log.info("Deactivating category {}", id);
         var responseDto = categoryService.deactivateCategory(id);
@@ -77,7 +77,7 @@ public class CategoryController {
     }
 
     @PatchMapping("/reactivate")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<CategoryResponseDto> reactivate(
             @RequestBody @Valid CategoryReactivateRequestDto dto) {
         log.info("Reactivating category by name {}", dto.getName());

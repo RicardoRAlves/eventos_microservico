@@ -51,7 +51,12 @@ public class EventCreateRequestDto {
     @NotNull(message = "Event scope must be informed")
     private EventScope scope;
 
+    @NotNull(message = "User id must be informed")
+    private Long userId;
+
+    @NotNull(message = "Organization id must be informed")
     private Long organizationId;
 
+    @NotNull(message = "Organization Unit id must be informed")
     private Long organizationUnitId;
 }

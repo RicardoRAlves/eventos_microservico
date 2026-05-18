@@ -49,7 +49,7 @@ class EventControllerIntegrationTest {
     private JwtDecoder jwtDecoder;
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "SUPER_ADMIN")
     void whenSendAGetRequestShouldReturnOk() throws Exception {
         willDoNothing().given(service).findAllEvents();
 
@@ -117,19 +117,21 @@ class EventControllerIntegrationTest {
     @WithMockUser(roles = "ADMIN")
     void whenSendAUpdatePhotoShouldReturnOk() throws Exception {
         var photoPath = "https://my-bucket.s3.amazonaws.com/photo.jpg";
-        MockMultipartFile file = new MockMultipartFile(
+
+        var file = new MockMultipartFile(
                 "image",
                 "foto.jpg",
                 "image/jpeg",
                 "conteudo da imagem".getBytes()
         );
 
-        given(service.updatePhoto(any())).willReturn(photoPath);
+        given(service.updatePhoto(any()))
+                .willReturn(photoPath);
 
         mockMvc.perform(multipart("/api/v1/evento/upload")
                         .file(file))
                 .andExpect(status().isOk())
-                .andExpect(content().string(photoPath));
+                .andExpect(jsonPath("$.imageUrl").value(photoPath));
 
         verify(service).updatePhoto(any());
     }
@@ -207,8 +209,9 @@ class EventControllerIntegrationTest {
                 "https://image.com/evento.png",
                 "Capoeira",
                 EventScope.ORGANIZATION_UNIT,
-                1L,
-                10L
+                1L,   // userId
+                1L,   // organizationId
+                10L   // organizationUnitId
         );
     }
 
@@ -228,7 +231,7 @@ class EventControllerIntegrationTest {
                 EventScope.ORGANIZATION_UNIT,
                 1L,
                 10L,
-                true
+                1L
         );
     }
 

@@ -1,9 +1,7 @@
 package com.br.capoeira.eventos.user_api.dto;
 
-import com.br.capoeira.eventos.user_api.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -21,9 +19,6 @@ public class UserCreateRequestDto {
     private String email;
     @NotBlank(message = "Password must be informed")
     private String password;
-    @NotNull(message = "Role must be informed")
-    private Role role;
     @NotBlank(message = "Avatar Url must be informed")
     private String avatarUrl;
-    private String joinCode;
 }

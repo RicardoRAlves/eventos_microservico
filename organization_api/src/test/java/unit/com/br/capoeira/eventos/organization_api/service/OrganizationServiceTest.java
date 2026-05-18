@@ -1,12 +1,15 @@
 package unit.com.br.capoeira.eventos.organization_api.service;
 
-import com.br.capoeira.eventos.organization_api.dto.OrganizationCreateRequestDto;
 import com.br.capoeira.eventos.organization_api.config.exception.ValidationException;
+import com.br.capoeira.eventos.organization_api.dto.OrganizationCreateRequestDto;
+import com.br.capoeira.eventos.organization_api.dto.PromoteToSuperAdminDtoRequest;
+import com.br.capoeira.eventos.organization_api.dto.UserResponseDto;
 import com.br.capoeira.eventos.organization_api.mapper.OrganizationMapper;
 import com.br.capoeira.eventos.organization_api.model.Organization;
 import com.br.capoeira.eventos.organization_api.model.OrganizationUnit;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationRepository;
 import com.br.capoeira.eventos.organization_api.repository.OrganizationUnitRepository;
+import com.br.capoeira.eventos.organization_api.restClient.UserClient;
 import com.br.capoeira.eventos.organization_api.service.OrganizationService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,62 +42,87 @@ class OrganizationServiceTest {
     @Mock
     private OrganizationUnitRepository organizationUnitRepository;
 
+    @Mock
+    private UserClient userClient;
+
     @InjectMocks
     private OrganizationService service;
 
     @Test
     void shouldCreateOrganizationWithMainUnit() {
         var requestDto = getMockOrganizationCreateRequestDto();
+
         var organization = getMockOrganization();
+
         var savedOrganization = getMockOrganization();
         savedOrganization.setId(1L);
 
         var organizationResponseDto = getMockOrganizationResponseDto();
 
-        when(mapper.organizationDtoToOrganization(any(OrganizationCreateRequestDto.class))).thenReturn(organization);
-        when(organizationRepository.existsBySlug(anyString())).thenReturn(false);
-        when(organizationRepository.save(any(Organization.class))).thenReturn(savedOrganization);
-        when(organizationUnitRepository.existsByJoinCode(anyString())).thenReturn(false);
-        when(organizationUnitRepository.existsByOrganization_IdAndSlug(anyLong(), anyString())).thenReturn(false);
-        when(organizationUnitRepository.save(any(OrganizationUnit.class))).thenAnswer(invocation -> {
-            var unit = invocation.getArgument(0, OrganizationUnit.class);
-            unit.setId(1L);
-            return unit;
-        });
-        //when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(savedOrganization));
-        when(mapper.organizationToResponseDto(any(Organization.class))).thenReturn(organizationResponseDto);
+        when(mapper.organizationDtoToOrganization(any(OrganizationCreateRequestDto.class)))
+                .thenReturn(organization);
+
+        when(organizationRepository.save(any(Organization.class)))
+                .thenReturn(savedOrganization);
+
+        when(organizationUnitRepository.existsByJoinCode(anyString()))
+                .thenReturn(false);
+
+        when(organizationUnitRepository.save(any(OrganizationUnit.class)))
+                .thenAnswer(invocation -> {
+                    var unit = invocation.getArgument(0, OrganizationUnit.class);
+                    unit.setId(1L);
+                    return unit;
+                });
+
+        when(userClient.promoteToSuperAdmin(any(PromoteToSuperAdminDtoRequest.class)))
+                .thenAnswer(invocation -> {
+                    var request = invocation.getArgument(
+                            0,
+                            PromoteToSuperAdminDtoRequest.class
+                    );
+
+                    var user = new UserResponseDto();
+                    user.setId(request.userId());
+                    user.setOrganizationId(request.organizationId());
+                    user.setOrganizationUnitId(request.organizationUnitId());
+
+                    return user;
+                });
+
+        when(mapper.organizationToResponseDto(any(Organization.class)))
+                .thenReturn(organizationResponseDto);
 
         var result = service.createWithMainUnit(requestDto);
 
         assertThat(result).isNotNull();
-        assertThat(result.getId()).isEqualTo(organizationResponseDto.getId());
+        assertThat(result.getId()).isEqualTo(
+                organizationResponseDto.getId()
+        );
 
-        verify(mapper).organizationDtoToOrganization(any(OrganizationCreateRequestDto.class));
-        verify(organizationRepository).existsBySlug(anyString());
-        verify(organizationRepository).save(any(Organization.class));
-        verify(organizationUnitRepository).existsByJoinCode(anyString());
-        verify(organizationUnitRepository).existsByOrganization_IdAndSlug(anyLong(), anyString());
-        verify(organizationUnitRepository).save(any(OrganizationUnit.class));
-        //verify(organizationRepository).findById(anyLong());
-        verify(mapper).organizationToResponseDto(any(Organization.class));
-    }
+        verify(mapper).organizationDtoToOrganization(
+                any(OrganizationCreateRequestDto.class)
+        );
 
-    @Test
-    void shouldNotCreateOrganizationWithMainUnitWhenSlugAlreadyExists() {
-        var requestDto = getMockOrganizationCreateRequestDto();
-        var organization = getMockOrganization();
+        verify(organizationRepository).save(
+                any(Organization.class)
+        );
 
-        when(mapper.organizationDtoToOrganization(any(OrganizationCreateRequestDto.class))).thenReturn(organization);
-        when(organizationRepository.existsBySlug(anyString())).thenReturn(true);
+        verify(organizationUnitRepository).existsByJoinCode(
+                anyString()
+        );
 
-        assertThatThrownBy(() -> service.createWithMainUnit(requestDto))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Organization slug already exists");
+        verify(organizationUnitRepository).save(
+                any(OrganizationUnit.class)
+        );
 
-        verify(mapper).organizationDtoToOrganization(any(OrganizationCreateRequestDto.class));
-        verify(organizationRepository).existsBySlug(anyString());
-        verify(organizationRepository, never()).save(any(Organization.class));
-        verify(organizationUnitRepository, never()).save(any(OrganizationUnit.class));
+        verify(userClient).promoteToSuperAdmin(
+                any(PromoteToSuperAdminDtoRequest.class)
+        );
+
+        verify(mapper).organizationToResponseDto(
+                any(Organization.class)
+        );
     }
 
     @Test
@@ -146,7 +174,6 @@ class OrganizationServiceTest {
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(organization));
         when(mapper.organizationUnitDtoToOrganizationUnit(any())).thenReturn(organizationUnit);
         when(organizationUnitRepository.existsByJoinCode(anyString())).thenReturn(false);
-        when(organizationUnitRepository.existsByOrganization_IdAndSlug(anyLong(), anyString())).thenReturn(false);
         when(organizationUnitRepository.save(any(OrganizationUnit.class))).thenReturn(organizationUnit);
         when(mapper.organizationUnitToResponseDto(any(OrganizationUnit.class))).thenReturn(responseDto);
 
@@ -158,7 +185,6 @@ class OrganizationServiceTest {
         verify(organizationRepository).findById(anyLong());
         verify(mapper).organizationUnitDtoToOrganizationUnit(any());
         verify(organizationUnitRepository).existsByJoinCode(anyString());
-        verify(organizationUnitRepository).existsByOrganization_IdAndSlug(anyLong(), anyString());
         verify(organizationUnitRepository).save(any(OrganizationUnit.class));
         verify(mapper).organizationUnitToResponseDto(any(OrganizationUnit.class));
     }
@@ -179,35 +205,12 @@ class OrganizationServiceTest {
     }
 
     @Test
-    void shouldNotCreateOrganizationUnitWhenSlugAlreadyExistsForOrganization() {
-        var dto = getMockOrganizationUnitDto();
-        var organization = getMockOrganization();
-        var organizationUnit = getMockOrganizationUnit();
-
-        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(organization));
-        when(mapper.organizationUnitDtoToOrganizationUnit(any())).thenReturn(organizationUnit);
-        when(organizationUnitRepository.existsByJoinCode(anyString())).thenReturn(false);
-        when(organizationUnitRepository.existsByOrganization_IdAndSlug(anyLong(), anyString())).thenReturn(true);
-
-        assertThatThrownBy(() -> service.create(dto))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Organization unit slug already exists for this organization");
-
-        verify(organizationRepository).findById(anyLong());
-        verify(mapper).organizationUnitDtoToOrganizationUnit(any());
-        verify(organizationUnitRepository).existsByJoinCode(anyString());
-        verify(organizationUnitRepository).existsByOrganization_IdAndSlug(anyLong(), anyString());
-        verify(organizationUnitRepository, never()).save(any());
-    }
-
-    @Test
     void shouldUpdateOrganization() {
         var dto = getMockOrganizationUpdateDto();
         var organization = getMockOrganization();
         var responseDto = getMockOrganizationResponseDto();
 
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(organization));
-        when(organizationRepository.findBySlug(anyString())).thenReturn(Optional.of(organization));
         when(organizationRepository.save(any(Organization.class))).thenReturn(organization);
         when(mapper.organizationToResponseDto(any(Organization.class))).thenReturn(responseDto);
 
@@ -218,7 +221,6 @@ class OrganizationServiceTest {
 
         verify(organizationRepository).findById(anyLong());
         verify(mapper).updateOrganizationFromDto(eq(dto), any(Organization.class));
-        verify(organizationRepository).findBySlug(anyString());
         verify(organizationRepository).save(any(Organization.class));
         verify(mapper).organizationToResponseDto(any(Organization.class));
     }
@@ -239,34 +241,12 @@ class OrganizationServiceTest {
     }
 
     @Test
-    void shouldNotUpdateOrganizationWhenSlugAlreadyExistsForAnotherOrganization() {
-        var dto = getMockOrganizationUpdateDto();
-        var organization = getMockOrganization();
-        var anotherOrganization = getMockOrganization();
-        anotherOrganization.setId(2L);
-
-        when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(organization));
-        when(organizationRepository.findBySlug(anyString())).thenReturn(Optional.of(anotherOrganization));
-
-        assertThatThrownBy(() -> service.update(dto))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Organization slug already exists");
-
-        verify(organizationRepository).findById(anyLong());
-        verify(mapper).updateOrganizationFromDto(eq(dto), any(Organization.class));
-        verify(organizationRepository).findBySlug(anyString());
-        verify(organizationRepository, never()).save(any());
-    }
-
-    @Test
     void shouldUpdateOrganizationUnit() {
         var dto = getMockOrganizationUnitUpdateDto();
         var organizationUnit = getMockOrganizationUnit();
         var responseDto = getMockOrganizationUnitResponseDto();
 
         when(organizationUnitRepository.findById(anyLong())).thenReturn(Optional.of(organizationUnit));
-        when(organizationUnitRepository.findByOrganization_IdAndSlug(anyLong(), anyString()))
-                .thenReturn(Optional.of(organizationUnit));
         when(organizationUnitRepository.save(any(OrganizationUnit.class))).thenReturn(organizationUnit);
         when(mapper.organizationUnitToResponseDto(any(OrganizationUnit.class))).thenReturn(responseDto);
 
@@ -277,7 +257,6 @@ class OrganizationServiceTest {
 
         verify(organizationUnitRepository).findById(anyLong());
         verify(mapper).updateOrganizationUnitFromDto(eq(dto), any(OrganizationUnit.class));
-        verify(organizationUnitRepository).findByOrganization_IdAndSlug(anyLong(), anyString());
         verify(organizationUnitRepository).save(any(OrganizationUnit.class));
         verify(mapper).organizationUnitToResponseDto(any(OrganizationUnit.class));
     }
@@ -295,27 +274,6 @@ class OrganizationServiceTest {
         verify(organizationUnitRepository).findById(anyLong());
         verify(organizationUnitRepository, never()).save(any());
         verify(mapper, never()).updateOrganizationUnitFromDto(any(), any());
-    }
-
-    @Test
-    void shouldNotUpdateOrganizationUnitWhenSlugAlreadyExistsForAnotherUnit() {
-        var dto = getMockOrganizationUnitUpdateDto();
-        var organizationUnit = getMockOrganizationUnit();
-        var anotherUnit = getMockOrganizationUnit();
-        anotherUnit.setId(2L);
-
-        when(organizationUnitRepository.findById(anyLong())).thenReturn(Optional.of(organizationUnit));
-        when(organizationUnitRepository.findByOrganization_IdAndSlug(anyLong(), anyString()))
-                .thenReturn(Optional.of(anotherUnit));
-
-        assertThatThrownBy(() -> service.update(dto))
-                .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("Organization unit slug already exists for this organization");
-
-        verify(organizationUnitRepository).findById(anyLong());
-        verify(mapper).updateOrganizationUnitFromDto(eq(dto), any(OrganizationUnit.class));
-        verify(organizationUnitRepository).findByOrganization_IdAndSlug(anyLong(), anyString());
-        verify(organizationUnitRepository, never()).save(any());
     }
 
     @Test

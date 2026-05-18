@@ -83,13 +83,11 @@ public class OrganizationUnitRepositoryIntegrationTest {
         var unit1 = getMockOrganizationUnit();
         unit1.setId(null);
         unit1.setName("Bonfim Jundiaí");
-        unit1.setSlug("bonfim-jundiai");
         unit1.setOrganization(savedOrganization);
 
         var unit2 = getMockOrganizationUnit();
         unit2.setId(null);
         unit2.setName("Bonfim Passos");
-        unit2.setSlug("bonfim-passos");
         unit2.setOrganization(savedOrganization);
 
         organizationUnitRepository.save(unit1);
@@ -110,56 +108,5 @@ public class OrganizationUnitRepositoryIntegrationTest {
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getTotalPages()).isEqualTo(1);
         assertThat(result.isLast()).isTrue();
-    }
-
-    @Test
-    void shouldReturnTrueWhenExistsByOrganizationIdAndSlug() {
-        var organization = getMockOrganization();
-        organization.setId(null);
-        var savedOrganization = organizationRepository.save(organization);
-
-        var unit = getMockOrganizationUnit();
-        unit.setId(null);
-        unit.setOrganization(savedOrganization);
-        unit.setSlug("bonfim-jundiai");
-
-        organizationUnitRepository.save(unit);
-
-        var exists = organizationUnitRepository.existsByOrganization_IdAndSlug(
-                savedOrganization.getId(),
-                "bonfim-jundiai"
-        );
-
-        assertThat(exists).isTrue();
-    }
-
-    @Test
-    void shouldFindByOrganizationIdAndSlug() {
-        var organization = getMockOrganization();
-        organization.setId(null);
-        var savedOrganization = organizationRepository.save(organization);
-
-        var unit = getMockOrganizationUnit();
-        unit.setId(null);
-        unit.setOrganization(savedOrganization);
-        unit.setSlug("bonfim-jundiai");
-
-        organizationUnitRepository.save(unit);
-
-        var result = organizationUnitRepository.findByOrganization_IdAndSlug(
-                savedOrganization.getId(),
-                "bonfim-jundiai"
-        );
-
-        assertThat(result).isPresent();
-        assertThat(result.get().getSlug()).isEqualTo("bonfim-jundiai");
-        assertThat(result.get().getOrganization().getId()).isEqualTo(savedOrganization.getId());
-    }
-
-    @Test
-    void shouldReturnFalseWhenExistsByOrganizationIdAndSlugDoesNotExist() {
-        var exists = organizationUnitRepository.existsByOrganization_IdAndSlug(1L, "slug-inexistente");
-
-        assertThat(exists).isFalse();
     }
 }

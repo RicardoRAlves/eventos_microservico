@@ -9,6 +9,7 @@ import com.br.capoeira.eventos.user_api.repository.UserRepository;
 import com.br.capoeira.eventos.user_api.restClient.OrganizationClient;
 import com.br.capoeira.eventos.user_api.service.UserService;
 import com.br.capoeira.eventos.user_api.service.aws.S3Service;
+import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -35,12 +37,16 @@ class UserServiceTest {
 
     @Mock
     private UserMapper mapper;
+
     @Mock
     private PasswordEncoder passwordEncoder;
+
     @Mock
     private UserRepository repository;
+
     @Mock
     private OrganizationClient organizationClient;
+
     @Mock
     private S3Service s3Service;
 
@@ -64,13 +70,17 @@ class UserServiceTest {
 
         assertNotNull(result);
         assertEquals(response, result);
+
         verify(repository).findById(1L);
         verify(mapper).userToResponseDto(user);
     }
 
     @Test
     void shouldThrowValidationExceptionWhenFindByIdWithNullId() {
-        var ex = assertThrows(ValidationException.class, () -> service.findById(null));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.findById(null)
+        );
 
         assertEquals("Id must be informed", ex.getMessage());
         verify(repository, never()).findById(any());
@@ -80,7 +90,50 @@ class UserServiceTest {
     void shouldThrowUsernameNotFoundExceptionWhenFindByIdAndUserDoesNotExist() {
         when(repository.findById(1L)).thenReturn(Optional.empty());
 
-        var ex = assertThrows(UsernameNotFoundException.class, () -> service.findById(1L));
+        var ex = assertThrows(
+                UsernameNotFoundException.class,
+                () -> service.findById(1L)
+        );
+
+        assertEquals("User not found", ex.getMessage());
+    }
+
+    @Test
+    void shouldFindUserByEmail() {
+        var user = getMockUser(1L, Role.CLIENT, true);
+        var response = new UserResponseDto();
+
+        when(repository.findByEmail("user@test.com")).thenReturn(Optional.of(user));
+        when(mapper.userToResponseDto(user)).thenReturn(response);
+
+        var result = service.findByEmail("user@test.com");
+
+        assertNotNull(result);
+        assertEquals(response, result);
+
+        verify(repository).findByEmail("user@test.com");
+        verify(mapper).userToResponseDto(user);
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenFindByEmailWithEmptyEmail() {
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.findByEmail("")
+        );
+
+        assertEquals("Email must be informed", ex.getMessage());
+        verify(repository, never()).findByEmail(anyString());
+    }
+
+    @Test
+    void shouldThrowUsernameNotFoundExceptionWhenFindByEmailAndUserDoesNotExist() {
+        when(repository.findByEmail("user@test.com")).thenReturn(Optional.empty());
+
+        var ex = assertThrows(
+                UsernameNotFoundException.class,
+                () -> service.findByEmail("user@test.com")
+        );
 
         assertEquals("User not found", ex.getMessage());
     }
@@ -95,15 +148,25 @@ class UserServiceTest {
 
         var userPage = new PageImpl<>(
                 List.of(user1, user2),
-                PageRequest.of(0, 10, Sort.by("id").ascending()),
+                PageRequest.of(0, 10),
                 2
         );
 
-        when(repository.findAllByOrganizationIdOrderByIdAsc(eq(10L), any(Pageable.class))).thenReturn(userPage);
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(userPage);
         when(mapper.userToResponseDto(user1)).thenReturn(response1);
         when(mapper.userToResponseDto(user2)).thenReturn(response2);
 
-        var result = service.findAllByOrganizationId(10L, 0, 10);
+        var result = service.findAllByOrganizationId(
+                10L,
+                null,
+                true,
+                Role.CLIENT,
+                "name",
+                "asc",
+                0,
+                10
+        );
 
         assertNotNull(result);
         assertEquals(2, result.getContent().size());
@@ -116,52 +179,90 @@ class UserServiceTest {
         assertEquals(response1, result.getContent().get(0));
         assertEquals(response2, result.getContent().get(1));
 
-        verify(repository).findAllByOrganizationIdOrderByIdAsc(eq(10L), any(Pageable.class));
+        verify(repository).findAll(any(Specification.class), any(Pageable.class));
         verify(mapper).userToResponseDto(user1);
         verify(mapper).userToResponseDto(user2);
     }
 
     @Test
     void shouldThrowValidationExceptionWhenOrganizationIdIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.findAllByOrganizationId(null, 0, 1));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.findAllByOrganizationId(
+                        null,
+                        null,
+                        null,
+                        null,
+                        "name",
+                        "asc",
+                        0,
+                        10
+                )
+        );
 
         assertEquals("Organization Id must be informed", ex.getMessage());
-        verify(repository, never()).findAllByOrganizationIdOrderByIdAsc(any(), any());
+        verify(repository, never()).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
     void shouldFindAllUsersByOrganizationUnitId() {
         var user = getMockUser(1L, Role.CLIENT, true);
         var response = new UserResponseDto();
-        var pageable = PageRequest.of(0, 10);
-        var userPage = new PageImpl<>(List.of(user), pageable, 2);
 
-        when(repository.findAllByOrganizationUnitIdOrderByIdAsc(anyLong(), any())).thenReturn(userPage);
+        var userPage = new PageImpl<>(
+                List.of(user),
+                PageRequest.of(0, 10),
+                1
+        );
+
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(userPage);
         when(mapper.userToResponseDto(user)).thenReturn(response);
 
-        var result = service.findAllByOrganizationUnitId(20L, 0, 10);
+        var result = service.findAllByOrganizationUnitId(
+                20L,
+                true,
+                Role.CLIENT,
+                "name",
+                "asc",
+                0,
+                10
+        );
 
         assertNotNull(result);
         assertEquals(1, result.getContent().size());
-        verify(repository).findAllByOrganizationUnitIdOrderByIdAsc(any(), any());
+        assertEquals(response, result.getContent().get(0));
+
+        verify(repository).findAll(any(Specification.class), any(Pageable.class));
+        verify(mapper).userToResponseDto(user);
     }
 
     @Test
     void shouldThrowValidationExceptionWhenOrganizationUnitIdIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.findAllByOrganizationUnitId(null, 0 ,10));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.findAllByOrganizationUnitId(
+                        null,
+                        null,
+                        null,
+                        "name",
+                        "asc",
+                        0,
+                        10
+                )
+        );
 
         assertEquals("Organization Unit Id must be informed", ex.getMessage());
-        verify(repository, never()).findAllByOrganizationUnitIdOrderByIdAsc(any(), any());
+        verify(repository, never()).findAll(any(Specification.class), any(Pageable.class));
     }
 
     @Test
-    void shouldCreateUserSuccessfullyWithoutJoinCode() {
+    void shouldCreateUserSuccessfully() {
         var dto = new UserCreateRequestDto();
         dto.setEmail("user@test.com");
         dto.setPassword("123456");
-        dto.setJoinCode(null);
 
-        var user = getMockUser(null, Role.CLIENT, false);
+        var user = getMockUser(null, Role.ADMIN, false);
         var savedUser = getMockUser(1L, Role.CLIENT, true);
         var response = new UserResponseDto();
 
@@ -174,77 +275,21 @@ class UserServiceTest {
         var result = service.create(dto);
 
         assertNotNull(result);
+        assertEquals(Role.CLIENT, user.getRole());
         assertEquals("encoded-password", user.getPassword());
         assertTrue(user.getActive());
+
         verify(organizationClient, never()).getByJoinCode(anyString());
         verify(repository).save(user);
-    }
-
-    @Test
-    void shouldCreateUserSuccessfullyWithJoinCode() {
-        var dto = new UserCreateRequestDto();
-        dto.setEmail("user@test.com");
-        dto.setPassword("123456");
-        dto.setJoinCode("JOIN123");
-
-        var user = getMockUser(null, Role.CLIENT, false);
-        var savedUser = getMockUser(1L, Role.CLIENT, true);
-        var response = new UserResponseDto();
-
-        var orgResponse = new OrganizationResponseDto();
-        orgResponse.setOrganizationId(100L);
-        orgResponse.setOrganizationUnitId(200L);
-
-        when(repository.existsByEmail("user@test.com")).thenReturn(false);
-        when(mapper.createRequestDtoToUser(dto)).thenReturn(user);
-        when(organizationClient.getByJoinCode("JOIN123")).thenReturn(orgResponse);
-        when(passwordEncoder.encode("123456")).thenReturn("encoded-password");
-        when(repository.save(user)).thenReturn(savedUser);
-        when(mapper.userToResponseDto(savedUser)).thenReturn(response);
-
-        var result = service.create(dto);
-
-        assertNotNull(result);
-        assertEquals("encoded-password", user.getPassword());
-        assertTrue(user.getActive());
-        assertEquals(100L, user.getOrganizationId());
-        assertEquals(200L, user.getOrganizationUnitId());
-        verify(organizationClient).getByJoinCode("JOIN123");
-        verify(repository).save(user);
-    }
-
-    @Test
-    void shouldNotApplyJoinCodeWhenCreatingUserAndOrganizationAlreadyExists() {
-        var dto = new UserCreateRequestDto();
-        dto.setEmail("user@test.com");
-        dto.setPassword("123456");
-        dto.setJoinCode("JOIN123");
-
-        var user = getMockUser(null, Role.CLIENT, false);
-        user.setOrganizationId(10L);
-        user.setOrganizationUnitId(20L);
-
-        var savedUser = getMockUser(1L, Role.CLIENT, true);
-        var response = new UserResponseDto();
-
-        when(repository.existsByEmail("user@test.com")).thenReturn(false);
-        when(mapper.createRequestDtoToUser(dto)).thenReturn(user);
-        when(passwordEncoder.encode("123456")).thenReturn("encoded-password");
-        when(repository.save(user)).thenReturn(savedUser);
-        when(mapper.userToResponseDto(savedUser)).thenReturn(response);
-
-        var result = service.create(dto);
-
-        assertNotNull(result);
-        assertEquals(10L, user.getOrganizationId());
-        assertEquals(20L, user.getOrganizationUnitId());
-        verify(organizationClient, never()).getByJoinCode(anyString());
-        verify(repository).save(user);
+        verify(mapper).userToResponseDto(savedUser);
     }
 
     @Test
     void shouldThrowValidationExceptionWhenCreateRequestIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.create(null));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.create(null)
+        );
 
         assertEquals("Request must be informed", ex.getMessage());
     }
@@ -256,7 +301,10 @@ class UserServiceTest {
 
         when(repository.existsByEmail("user@test.com")).thenReturn(true);
 
-        var ex = assertThrows(ValidationException.class, () -> service.create(dto));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.create(dto)
+        );
 
         assertEquals("Email already registered", ex.getMessage());
         verify(repository, never()).save(any());
@@ -268,7 +316,6 @@ class UserServiceTest {
         dto.setId(1L);
         dto.setName("Updated Name");
         dto.setAvatarUrl("new-avatar.png");
-        dto.setJoinCode(null);
 
         var savedUser = getMockUser(1L, Role.CLIENT, true);
         var response = new UserResponseDto();
@@ -282,45 +329,18 @@ class UserServiceTest {
         assertNotNull(result);
         assertEquals("Updated Name", savedUser.getName());
         assertEquals("new-avatar.png", savedUser.getAvatarUrl());
-        verify(repository).save(savedUser);
+
         verify(organizationClient, never()).getByJoinCode(anyString());
-    }
-
-    @Test
-    void shouldUpdateUserAndApplyJoinCodeWhenNecessary() {
-        var dto = new UserUpdateRequestDto();
-        dto.setId(1L);
-        dto.setName("Updated Name");
-        dto.setAvatarUrl("new-avatar.png");
-        dto.setJoinCode("JOIN123");
-
-        var savedUser = getMockUser(1L, Role.CLIENT, true);
-        savedUser.setOrganizationId(null);
-        savedUser.setOrganizationUnitId(null);
-
-        var response = new UserResponseDto();
-
-        var orgResponse = new OrganizationResponseDto();
-        orgResponse.setOrganizationId(100L);
-        orgResponse.setOrganizationUnitId(200L);
-
-        when(repository.findById(1L)).thenReturn(Optional.of(savedUser));
-        when(organizationClient.getByJoinCode("JOIN123")).thenReturn(orgResponse);
-        when(repository.save(savedUser)).thenReturn(savedUser);
-        when(mapper.userToResponseDto(savedUser)).thenReturn(response);
-
-        var result = service.update(dto);
-
-        assertNotNull(result);
-        assertEquals(100L, savedUser.getOrganizationId());
-        assertEquals(200L, savedUser.getOrganizationUnitId());
-        verify(organizationClient).getByJoinCode("JOIN123");
         verify(repository).save(savedUser);
+        verify(mapper).userToResponseDto(savedUser);
     }
 
     @Test
     void shouldThrowValidationExceptionWhenUpdateRequestIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.update(null));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.update(null)
+        );
 
         assertEquals("Request must be informed", ex.getMessage());
     }
@@ -330,7 +350,10 @@ class UserServiceTest {
         var dto = new UserUpdateRequestDto();
         dto.setId(null);
 
-        var ex = assertThrows(ValidationException.class, () -> service.update(dto));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.update(dto)
+        );
 
         assertEquals("Id must be informed", ex.getMessage());
     }
@@ -353,14 +376,87 @@ class UserServiceTest {
 
         assertNotNull(result);
         assertEquals("encoded-password", savedUser.getPassword());
+
         verify(repository).save(savedUser);
+        verify(mapper).userToResponseDto(savedUser);
     }
 
     @Test
     void shouldThrowValidationExceptionWhenChangePasswordRequestIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.changePassword(null));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.changePassword(null)
+        );
 
         assertEquals("Request must be informed", ex.getMessage());
+    }
+
+    @Test
+    void shouldJoinCodeSuccessfully() {
+        var dto = new UserJoinCodeRequestDto();
+        dto.setId(1L);
+        dto.setJoinCode("JOIN123");
+
+        var savedUser = getMockUser(1L, Role.CLIENT, true);
+        savedUser.setOrganizationId(null);
+        savedUser.setOrganizationUnitId(null);
+
+        var response = new UserResponseDto();
+
+        var orgResponse = new OrganizationResponseDto();
+        orgResponse.setOrganizationId(100L);
+        orgResponse.setOrganizationUnitId(200L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(savedUser));
+        when(organizationClient.getByJoinCode("JOIN123")).thenReturn(orgResponse);
+        when(repository.save(savedUser)).thenReturn(savedUser);
+        when(mapper.userToResponseDto(savedUser)).thenReturn(response);
+
+        var result = service.joinCode(dto);
+
+        assertNotNull(result);
+        assertEquals(100L, savedUser.getOrganizationId());
+        assertEquals(200L, savedUser.getOrganizationUnitId());
+
+        verify(organizationClient).getByJoinCode("JOIN123");
+        verify(repository).save(savedUser);
+        verify(mapper).userToResponseDto(savedUser);
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenJoinCodeRequestIsNull() {
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.joinCode(null)
+        );
+
+        assertEquals("Request must be informed", ex.getMessage());
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenUserAlreadyHasOrganizationOnJoinCode() {
+        var dto = new UserJoinCodeRequestDto();
+        dto.setId(1L);
+        dto.setJoinCode("JOIN123");
+
+        var savedUser = getMockUser(1L, Role.CLIENT, true);
+        savedUser.setOrganizationId(100L);
+        savedUser.setOrganizationUnitId(200L);
+
+        when(repository.findById(1L)).thenReturn(Optional.of(savedUser));
+
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.joinCode(dto)
+        );
+
+        assertEquals(
+                "User is already added to Organization 100",
+                ex.getMessage()
+        );
+
+        verify(organizationClient, never()).getByJoinCode(anyString());
+        verify(repository, never()).save(any());
     }
 
     @Test
@@ -382,12 +478,17 @@ class UserServiceTest {
 
         assertNotNull(result);
         assertEquals(Role.ADMIN, savedUser.getRole());
+
         verify(repository).save(savedUser);
+        verify(mapper).userToResponseDto(savedUser);
     }
 
     @Test
     void shouldThrowValidationExceptionWhenChangeRoleRequestIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.changeRole(null));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.changeRole(null)
+        );
 
         assertEquals("Request must be informed", ex.getMessage());
     }
@@ -400,9 +501,27 @@ class UserServiceTest {
         dto.setId(1L);
         dto.setRole(null);
 
-        var ex = assertThrows(ValidationException.class, () -> service.changeRole(dto));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.changeRole(dto)
+        );
 
         assertEquals("Role must be informed", ex.getMessage());
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    void shouldThrowValidationExceptionWhenAuthenticatedUserNotFoundOnChangeRole() {
+        var dto = new UserChangeRoleRequestDto();
+        dto.setId(1L);
+        dto.setRole(Role.ADMIN);
+
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.changeRole(dto)
+        );
+
+        assertEquals("Authenticated user not found", ex.getMessage());
         verify(repository, never()).save(any());
     }
 
@@ -414,9 +533,13 @@ class UserServiceTest {
         dto.setId(1L);
         dto.setRole(Role.CLIENT);
 
-        var ex = assertThrows(ValidationException.class, () -> service.changeRole(dto));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.changeRole(dto)
+        );
 
         assertEquals("Users cannot change their own role", ex.getMessage());
+
         verify(repository, never()).findById(any());
         verify(repository, never()).save(any());
     }
@@ -436,7 +559,9 @@ class UserServiceTest {
 
         assertNotNull(result);
         assertFalse(savedUser.getActive());
+
         verify(repository).save(savedUser);
+        verify(mapper).userToResponseDto(savedUser);
     }
 
     @Test
@@ -444,9 +569,13 @@ class UserServiceTest {
         mockAuthenticatedUser(1L, Role.ADMIN);
 
         var savedUser = getMockUser(1L, Role.ADMIN, true);
+
         when(repository.findById(1L)).thenReturn(Optional.of(savedUser));
 
-        var ex = assertThrows(ValidationException.class, () -> service.deactivateUser(1L));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.deactivateUser(1L)
+        );
 
         assertEquals("Users cannot deactivate themselves", ex.getMessage());
         verify(repository, never()).save(any());
@@ -457,30 +586,39 @@ class UserServiceTest {
         var savedUser = getMockUser(1L, Role.CLIENT, false);
         var response = new UserResponseDto();
 
-        when(repository.findByEmail("user@test.com")).thenReturn(Optional.of(savedUser));
+        when(repository.findById(1L)).thenReturn(Optional.of(savedUser));
         when(repository.save(savedUser)).thenReturn(savedUser);
         when(mapper.userToResponseDto(savedUser)).thenReturn(response);
 
-        var result = service.reactivateUser("user@test.com");
+        var result = service.reactivateUser(1L);
 
         assertNotNull(result);
         assertTrue(savedUser.getActive());
+
+        verify(repository).findById(1L);
         verify(repository).save(savedUser);
+        verify(mapper).userToResponseDto(savedUser);
     }
 
     @Test
-    void shouldThrowValidationExceptionWhenReactivateEmailIsEmpty() {
-        var ex = assertThrows(ValidationException.class, () -> service.reactivateUser(""));
+    void shouldThrowValidationExceptionWhenReactivateIdIsNull() {
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.reactivateUser(null)
+        );
 
-        assertEquals("Email must be informed", ex.getMessage());
-        verify(repository, never()).findByEmail(anyString());
+        assertEquals("Id must be informed", ex.getMessage());
+        verify(repository, never()).findById(any());
     }
 
     @Test
     void shouldThrowUsernameNotFoundExceptionWhenReactivateUserDoesNotExist() {
-        when(repository.findByEmail("user@test.com")).thenReturn(Optional.empty());
+        when(repository.findById(1L)).thenReturn(Optional.empty());
 
-        var ex = assertThrows(UsernameNotFoundException.class, () -> service.reactivateUser("user@test.com"));
+        var ex = assertThrows(
+                UsernameNotFoundException.class,
+                () -> service.reactivateUser(1L)
+        );
 
         assertEquals("User not found", ex.getMessage());
     }
@@ -490,7 +628,8 @@ class UserServiceTest {
         MultipartFile file = mock(MultipartFile.class);
 
         when(file.isEmpty()).thenReturn(false);
-        when(s3Service.uploadFile(file)).thenReturn(URI.create("https://s3.amazonaws.com/file.png"));
+        when(s3Service.uploadFile(file))
+                .thenReturn(URI.create("https://s3.amazonaws.com/file.png"));
 
         var result = service.updatePhoto(file);
 
@@ -500,7 +639,10 @@ class UserServiceTest {
 
     @Test
     void shouldThrowValidationExceptionWhenPhotoIsNull() {
-        var ex = assertThrows(ValidationException.class, () -> service.updatePhoto(null));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.updatePhoto(null)
+        );
 
         assertEquals("Image must be informed", ex.getMessage());
         verify(s3Service, never()).uploadFile(any());
@@ -509,26 +651,78 @@ class UserServiceTest {
     @Test
     void shouldThrowValidationExceptionWhenPhotoIsEmpty() {
         MultipartFile file = mock(MultipartFile.class);
+
         when(file.isEmpty()).thenReturn(true);
 
-        var ex = assertThrows(ValidationException.class, () -> service.updatePhoto(file));
+        var ex = assertThrows(
+                ValidationException.class,
+                () -> service.updatePhoto(file)
+        );
 
         assertEquals("Image must be informed", ex.getMessage());
         verify(s3Service, never()).uploadFile(any());
     }
 
+    @Test
+    void shouldPromoteToSuperAdminSuccessfully() {
+        var request = new PromoteToSuperAdminDtoRequest(
+                1L,
+                100L,
+                200L
+        );
+
+        var user = getMockUser(1L, Role.CLIENT, true);
+        var response = new UserResponseDto();
+
+        when(repository.findById(1L)).thenReturn(Optional.of(user));
+        when(repository.save(user)).thenReturn(user);
+        when(mapper.userToResponseDto(user)).thenReturn(response);
+
+        var result = service.promoteToSuperAdmin(request);
+
+        assertNotNull(result);
+        assertEquals(Role.SUPER_ADMIN, user.getRole());
+        assertEquals(100L, user.getOrganizationId());
+        assertEquals(200L, user.getOrganizationUnitId());
+
+        verify(repository).save(user);
+        verify(mapper).userToResponseDto(user);
+    }
+
+    @Test
+    void shouldThrowEntityNotFoundExceptionWhenPromoteToSuperAdminUserDoesNotExist() {
+        var request = new PromoteToSuperAdminDtoRequest(
+                1L,
+                100L,
+                200L
+        );
+
+        when(repository.findById(1L)).thenReturn(Optional.empty());
+
+        var ex = assertThrows(
+                EntityNotFoundException.class,
+                () -> service.promoteToSuperAdmin(request)
+        );
+
+        assertEquals("User not found", ex.getMessage());
+        verify(repository, never()).save(any());
+    }
+
     private void mockAuthenticatedUser(Long id, Role role) {
         var loggedUser = getMockUser(id, role, true);
+
         var authentication = new UsernamePasswordAuthenticationToken(
                 loggedUser,
                 null,
                 loggedUser.getAuthorities()
         );
+
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     private User getMockUser(Long id, Role role, Boolean active) {
-        User user = new User();
+        var user = new User();
+
         user.setId(id);
         user.setName("Test User");
         user.setEmail("user@test.com");
@@ -538,6 +732,7 @@ class UserServiceTest {
         user.setAvatarUrl("avatar.png");
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
+
         return user;
     }
 }

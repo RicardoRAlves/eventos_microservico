@@ -54,7 +54,6 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
-                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
@@ -84,7 +83,6 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.organizationId").value(responseDto.getOrganizationId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
-                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.city").value(responseDto.getCity()))
                 .andExpect(jsonPath("$.state").value(responseDto.getState()))
@@ -121,7 +119,6 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(jsonPath("$.content[0].id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.content[0].organizationId").value(responseDto.getOrganizationId()))
                 .andExpect(jsonPath("$.content[0].name").value(responseDto.getName()))
-                .andExpect(jsonPath("$.content[0].slug").value(responseDto.getSlug()))
                 .andExpect(jsonPath("$.content[0].description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.content[0].city").value(responseDto.getCity()))
                 .andExpect(jsonPath("$.content[0].state").value(responseDto.getState()))
@@ -165,7 +162,6 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
-                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
@@ -175,24 +171,31 @@ class OrganizationControllerIntegrationTest {
 
     @Test
     @WithMockUser(roles = "CLIENT")
-    void shouldReturnForbiddenWhenCreateOrganizationWithClientRole() throws Exception {
+    void shouldCreateOrganizationWithClientRole() throws Exception {
         var requestDto = getMockOrganizationCreateRequestDto();
+        var responseDto = getMockOrganizationResponseDto();
+
+        when(service.createWithMainUnit(any(OrganizationCreateRequestDto.class)))
+                .thenReturn(responseDto);
 
         mockMvc.perform(post("/api/v1/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(requestDto)))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(responseDto.getId()))
+                .andExpect(jsonPath("$.name").value(responseDto.getName()));
 
-        verify(service, never()).createWithMainUnit(any(OrganizationCreateRequestDto.class));
+        verify(service).createWithMainUnit(any(OrganizationCreateRequestDto.class));
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "SUPER_ADMIN")
     void shouldCreateOrganizationUnit() throws Exception {
         var requestDto = getMockOrganizationUnitDto();
         var responseDto = getMockOrganizationUnitResponseDto();
 
-        when(service.create(any(OrganizationUnitDto.class))).thenReturn(responseDto);
+        when(service.create(any(OrganizationUnitDto.class)))
+                .thenReturn(responseDto);
 
         mockMvc.perform(post("/api/v1/organizacao/unit")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -201,7 +204,6 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.organizationId").value(responseDto.getOrganizationId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
-                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.city").value(responseDto.getCity()))
                 .andExpect(jsonPath("$.state").value(responseDto.getState()))
@@ -228,12 +230,13 @@ class OrganizationControllerIntegrationTest {
     }
 
     @Test
-    @WithMockUser(roles = "ADMIN")
+    @WithMockUser(roles = "SUPER_ADMIN")
     void shouldUpdateOrganization() throws Exception {
         var requestDto = getMockOrganizationUpdateDto();
         var responseDto = getMockOrganizationResponseDto();
 
-        when(service.update(any(OrganizationUpdateDto.class))).thenReturn(responseDto);
+        when(service.update(any(OrganizationUpdateDto.class)))
+                .thenReturn(responseDto);
 
         mockMvc.perform(put("/api/v1/organizacao")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -241,12 +244,24 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
-                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
         verify(service).update(any(OrganizationUpdateDto.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void shouldReturnForbiddenWhenUpdateOrganizationWithAdminRole() throws Exception {
+        var requestDto = getMockOrganizationUpdateDto();
+
+        mockMvc.perform(put("/api/v1/organizacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+
+        verify(service, never()).update(any(OrganizationUpdateDto.class));
     }
 
     @Test
@@ -277,7 +292,6 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.organizationId").value(responseDto.getOrganizationId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
-                .andExpect(jsonPath("$.slug").value(responseDto.getSlug()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.city").value(responseDto.getCity()))
                 .andExpect(jsonPath("$.state").value(responseDto.getState()))

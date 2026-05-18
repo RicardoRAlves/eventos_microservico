@@ -32,8 +32,25 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.exchange.update-notification.name}")
     private String exchangeUpdateName;
 
+    @Value("${rabbitmq.exchange.delete-notification.name}")
+    private String exchangeDeleteName;
+
+    //Sale Exchange
+    @Value("${rabbitmq.exchange.sale.create-notification.name}")
+    private String exchangeCreateSaleName;
+
+    @Value("${rabbitmq.exchange.sale.update-notification.name}")
+    private String exchangeUpdateSaleName;
+
+    @Value("${rabbitmq.exchange.sale.delete-notification.name}")
+    private String exchangeDeleteSaleName;
+
+
     @Value("${rabbitmq.queue.update-notification.name}")
     private String queueUpdateName;
+
+    @Value("${rabbitmq.queue.delete-notification.name}")
+    private String queueDeleteName;
 
     @Value("${rabbitmq.exchange.error.create.notification.name}")
     private String exchangeCreateErrorName;
@@ -47,19 +64,19 @@ public class RabbitMqConfig {
     @Value("${rabbitmq.queue.update-error-notification.name}")
     private String queueUpdateErrorName;
 
+    // Sale Queue
+    @Value("${rabbitmq.queue.sale.create-notification.name}")
+    private String queueCreateSaleName;
+
+    @Value("${rabbitmq.queue.sale.update-notification.name}")
+    private String queueUpdateSaleName;
+
+    @Value("${rabbitmq.queue.sale.delete-notification.name}")
+    private String queueDeleteSaleName;
+
     @Bean
     public FanoutExchange notificationCreateExchange(){
         return new FanoutExchange(exchangeCreateName);
-    }
-
-    @Bean
-    public Queue notificationQueueCreate() {
-        return new Queue(queueCreateName);
-    }
-
-    @Bean
-    public Binding bindingQueueCreate(){
-        return BindingBuilder.bind(notificationQueueCreate()).to(notificationCreateExchange());
     }
 
     @Bean
@@ -68,43 +85,13 @@ public class RabbitMqConfig {
     }
 
     @Bean
-    public Queue notificationQueueGetAll() {
-        return new Queue(queueGetAllName);
-    }
-
-    @Bean
-    public Binding bindingQueueGetAll(){
-        return BindingBuilder.bind(notificationQueueGetAll()).to(notificationGetAllExchange());
-    }
-
-    @Bean
     public FanoutExchange notificationUpdateExchange(){
         return new FanoutExchange(exchangeUpdateName);
     }
 
     @Bean
-    public Queue notificationQueueUpdate() {
-        return new Queue(queueUpdateName);
-    }
-
-    @Bean
-    public Binding bindingQueueUpdate(){
-        return BindingBuilder.bind(notificationQueueUpdate()).to(notificationUpdateExchange());
-    }
-
-    @Bean
-    public FanoutExchange notificationCreateErrorExchange(){
-        return new FanoutExchange(exchangeCreateErrorName);
-    }
-
-    @Bean
-    public Queue notificationQueueCreateError() {
-        return new Queue(queueCreateErrorName);
-    }
-
-    @Bean
-    public Binding bindingQueueCreateError(){
-        return BindingBuilder.bind(notificationQueueCreateError()).to(notificationCreateErrorExchange());
+    public FanoutExchange notificationDeleteExchange(){
+        return new FanoutExchange(exchangeDeleteName);
     }
 
     @Bean
@@ -113,13 +100,116 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public FanoutExchange notificationCreateErrorExchange(){
+        return new FanoutExchange(exchangeCreateErrorName);
+    }
+
+    // Sale Exchange
+    @Bean
+    public FanoutExchange notificationCreateSaleExchange(){
+        return new FanoutExchange(exchangeCreateSaleName);
+    }
+
+    @Bean
+    public FanoutExchange notificationUpdateSaleExchange(){
+        return new FanoutExchange(exchangeUpdateSaleName);
+    }
+
+    @Bean
+    public FanoutExchange notificationDeleteSaleExchange(){
+        return new FanoutExchange(exchangeDeleteSaleName);
+    }
+
+    @Bean
+    public Queue notificationQueueCreateError() {
+        return new Queue(queueCreateErrorName);
+    }
+
+    @Bean
+    public Queue notificationQueueCreate() {
+        return new Queue(queueCreateName);
+    }
+
+    @Bean
+    public Queue notificationQueueGetAll() {
+        return new Queue(queueGetAllName);
+    }
+
+    @Bean
+    public Queue notificationQueueUpdate() {
+        return new Queue(queueUpdateName);
+    }
+
+    @Bean
+    public Queue notificationQueueDelete() {
+        return new Queue(queueDeleteName);
+    }
+
+    @Bean
     public Queue notificationQueueUpdateError() {
         return new Queue(queueUpdateErrorName);
+    }
+
+    // Sale Queue
+    @Bean
+    public Queue notificationQueueCreateSale() {
+        return new Queue(queueCreateSaleName);
+    }
+
+    @Bean
+    public Queue notificationQueueUpdateSale() {
+        return new Queue(queueUpdateSaleName);
+    }
+
+    @Bean
+    public Queue notificationQueueDeleteSale() {
+        return new Queue(queueDeleteSaleName);
+    }
+
+    @Bean
+    public Binding bindingQueueCreate(){
+        return BindingBuilder.bind(notificationQueueCreate()).to(notificationCreateExchange());
+    }
+
+    @Bean
+    public Binding bindingQueueGetAll(){
+        return BindingBuilder.bind(notificationQueueGetAll()).to(notificationGetAllExchange());
+    }
+
+    @Bean
+    public Binding bindingQueueUpdate(){
+        return BindingBuilder.bind(notificationQueueUpdate()).to(notificationUpdateExchange());
+    }
+
+    @Bean
+    public Binding bindingQueueDelete(){
+        return BindingBuilder.bind(notificationQueueDelete()).to(notificationDeleteExchange());
+    }
+
+    @Bean
+    public Binding bindingQueueCreateError(){
+        return BindingBuilder.bind(notificationQueueCreateError()).to(notificationCreateErrorExchange());
     }
 
     @Bean
     public Binding bindingQueueUpdateError(){
         return BindingBuilder.bind(notificationQueueUpdateError()).to(notificationUpdateErrorExchange());
+    }
+
+    //Sale Binding
+    @Bean
+    public Binding bindingQueueCreateSale(){
+        return BindingBuilder.bind(notificationQueueCreateSale()).to(notificationCreateSaleExchange());
+    }
+
+    @Bean
+    public Binding bindingQueueUpdateSale(){
+        return BindingBuilder.bind(notificationQueueUpdateSale()).to(notificationUpdateSaleExchange());
+    }
+
+    @Bean
+    public Binding bindingQueueDeleteSale(){
+        return BindingBuilder.bind(notificationQueueDeleteSale()).to(notificationDeleteSaleExchange());
     }
 
     @Bean
