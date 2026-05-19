@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.text.Normalizer;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -57,6 +58,14 @@ public class S3Service {
 
             String contentType = multipartFile.getContentType();
             String extension = extractExtension(multipartFile, contentType);
+
+            log.info(
+                    "Image metadata. originalFilename={}, contentType={}, extension={}",
+                    multipartFile.getOriginalFilename(),
+                    contentType,
+                    extension
+            );
+
             String key = buildOrganizationImageKey(organizationName, extension);
 
             return uploadFile(
@@ -130,24 +139,31 @@ public class S3Service {
             MultipartFile multipartFile,
             String contentType
     ) {
-        if (contentType != null && contentType.contains("/")) {
-            String extension = contentType.substring(contentType.indexOf("/") + 1);
+        if ("image/jpeg".equalsIgnoreCase(contentType)) {
+            return "jpg";
+        }
 
-            if (extension.equalsIgnoreCase("jpeg")) {
-                return "jpg";
-            }
+        if ("image/png".equalsIgnoreCase(contentType)) {
+            return "png";
+        }
 
-            return extension.toLowerCase(Locale.ROOT);
+        if ("image/webp".equalsIgnoreCase(contentType)) {
+            return "webp";
         }
 
         String originalFilename = multipartFile.getOriginalFilename();
 
         if (originalFilename != null && originalFilename.contains(".")) {
-            return originalFilename.substring(originalFilename.lastIndexOf(".") + 1)
-                    .toLowerCase(Locale.ROOT);
+            String extension = originalFilename.substring(
+                    originalFilename.lastIndexOf(".") + 1
+            ).toLowerCase(Locale.ROOT);
+
+            if (List.of("jpg", "jpeg", "png", "webp").contains(extension)) {
+                return extension.equals("jpeg") ? "jpg" : extension;
+            }
         }
 
-        return "jpg";
+        throw new FileException("Invalid image type: " + contentType);
     }
 
     public void deleteImage(String fileName) {
