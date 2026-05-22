@@ -58,6 +58,14 @@ public class S3Service {
 
             String contentType = multipartFile.getContentType();
             String extension = extractExtension(multipartFile, contentType);
+
+            log.info(
+                    "Image metadata. originalFilename={}, contentType={}, extension={}",
+                    multipartFile.getOriginalFilename(),
+                    contentType,
+                    extension
+            );
+
             String key = buildOrganizationImageKey(organizationName, extension);
 
             return uploadFile(
