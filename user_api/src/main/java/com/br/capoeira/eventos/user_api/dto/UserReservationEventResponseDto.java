@@ -24,7 +24,7 @@ public class UserReservationEventResponseDto {
 
     private String description;
 
-    private Integer quantity;
+    private Integer reservedQuantity;
 
     private BigDecimal value;
 

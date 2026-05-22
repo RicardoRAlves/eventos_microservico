@@ -245,6 +245,7 @@ public class UserService {
 
     @Transactional
     public UserResponseDto promoteToSuperAdmin(PromoteToSuperAdminDtoRequest request) {
+        log.info("promoting user {}", request.userId());
         User user = repository.findById(request.userId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found"));
 
@@ -252,6 +253,7 @@ public class UserService {
         user.setOrganizationId(request.organizationId());
         user.setOrganizationUnitId(request.organizationUnitId());
 
+        log.info("saving promoted user {}", request.userId());
         User savedUser = repository.save(user);
 
         return mapper.userToResponseDto(savedUser);

@@ -304,6 +304,7 @@ public class OrganizationService {
     }
 
     private void changeUserRole(Long userId, Long organizationId, Long unitId){
+        log.info("change User Role={}", userId);
         var userRequest = new PromoteToSuperAdminDtoRequest(
                 userId,
                 organizationId,

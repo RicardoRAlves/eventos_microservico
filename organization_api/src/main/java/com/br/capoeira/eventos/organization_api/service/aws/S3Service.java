@@ -139,6 +139,22 @@ public class S3Service {
             MultipartFile multipartFile,
             String contentType
     ) {
+        String originalFilename = multipartFile.getOriginalFilename();
+
+        if (originalFilename != null && originalFilename.contains(".")) {
+            String extension = originalFilename.substring(
+                    originalFilename.lastIndexOf(".") + 1
+            ).toLowerCase(Locale.ROOT);
+
+            if (extension.equals("jpeg")) {
+                return "jpg";
+            }
+
+            if (List.of("jpg", "png", "webp").contains(extension)) {
+                return extension;
+            }
+        }
+
         if ("image/jpeg".equalsIgnoreCase(contentType)) {
             return "jpg";
         }
@@ -149,18 +165,6 @@ public class S3Service {
 
         if ("image/webp".equalsIgnoreCase(contentType)) {
             return "webp";
-        }
-
-        String originalFilename = multipartFile.getOriginalFilename();
-
-        if (originalFilename != null && originalFilename.contains(".")) {
-            String extension = originalFilename.substring(
-                    originalFilename.lastIndexOf(".") + 1
-            ).toLowerCase(Locale.ROOT);
-
-            if (List.of("jpg", "jpeg", "png", "webp").contains(extension)) {
-                return extension.equals("jpeg") ? "jpg" : extension;
-            }
         }
 
         throw new FileException("Invalid image type: " + contentType);
