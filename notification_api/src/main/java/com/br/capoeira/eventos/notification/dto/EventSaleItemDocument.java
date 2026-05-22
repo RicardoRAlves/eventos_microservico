@@ -4,13 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.util.Date;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventSaleItemDocument {
+
     private Long id;
 
     private String transactionId;
@@ -23,7 +23,7 @@ public class EventSaleItemDocument {
 
     private Integer quantity;
 
-    private BigDecimal value;
+    private Double value;
 
     private Boolean active;
 

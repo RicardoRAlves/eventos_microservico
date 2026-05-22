@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.text.Normalizer;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -130,24 +131,35 @@ public class S3Service {
             MultipartFile multipartFile,
             String contentType
     ) {
-        if (contentType != null && contentType.contains("/")) {
-            String extension = contentType.substring(contentType.indexOf("/") + 1);
-
-            if (extension.equalsIgnoreCase("jpeg")) {
-                return "jpg";
-            }
-
-            return extension.toLowerCase(Locale.ROOT);
-        }
-
         String originalFilename = multipartFile.getOriginalFilename();
 
         if (originalFilename != null && originalFilename.contains(".")) {
-            return originalFilename.substring(originalFilename.lastIndexOf(".") + 1)
-                    .toLowerCase(Locale.ROOT);
+            String extension = originalFilename.substring(
+                    originalFilename.lastIndexOf(".") + 1
+            ).toLowerCase(Locale.ROOT);
+
+            if (extension.equals("jpeg")) {
+                return "jpg";
+            }
+
+            if (List.of("jpg", "png", "webp").contains(extension)) {
+                return extension;
+            }
         }
 
-        return "jpg";
+        if ("image/jpeg".equalsIgnoreCase(contentType)) {
+            return "jpg";
+        }
+
+        if ("image/png".equalsIgnoreCase(contentType)) {
+            return "png";
+        }
+
+        if ("image/webp".equalsIgnoreCase(contentType)) {
+            return "webp";
+        }
+
+        throw new FileException("Invalid image type: " + contentType);
     }
 
     public void deleteImage(String fileName) {

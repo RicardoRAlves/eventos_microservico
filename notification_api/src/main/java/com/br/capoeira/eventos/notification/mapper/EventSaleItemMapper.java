@@ -25,7 +25,11 @@ public final class EventSaleItemMapper {
         doc.setEventTransactionId(eventSaleItem.getEventTransactionId());
         doc.setDescription(eventSaleItem.getDescription());
         doc.setQuantity(eventSaleItem.getQuantity());
-        doc.setValue(eventSaleItem.getValue());
+        doc.setValue(
+                eventSaleItem.getValue() != null
+                        ? eventSaleItem.getValue().doubleValue()
+                        : null
+        );
         doc.setActive(eventSaleItem.getActive());
         doc.setCreatedAt(toDate(eventSaleItem.getCreatedAt()));
         doc.setUpdatedAt(toDate(eventSaleItem.getUpdatedAt()));

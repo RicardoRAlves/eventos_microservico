@@ -13,8 +13,8 @@ import com.br.capoeira.eventos.processor_api.repository.EventRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
@@ -26,6 +26,7 @@ public class EventProcessorService {
     private final EventMapper mapper;
     private final EventProcessorProducer producer;
 
+    @Transactional(readOnly = true)
     public void findAll() {
         log.info("Finding all events");
 
