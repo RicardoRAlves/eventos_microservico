@@ -36,6 +36,18 @@ public class UserReservationService {
     }
 
     @Transactional(readOnly = true)
+    public List<UserReservationEventResponseDto> findAllReservedEventsByEventId(Long eventId) {
+        validateEventId(eventId);
+
+        log.info("Finding all reservations by eventId={}", eventId);
+
+        return repository.findAllByEventId(eventId)
+                .stream()
+                .map(mapper::entityToResponseDto)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public Long countingAllReservesByEventId(Long eventId) {
         validateEventId(eventId);
 
