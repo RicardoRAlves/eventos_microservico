@@ -48,12 +48,12 @@ public class UserReservationService {
     }
 
     @Transactional(readOnly = true)
-    public Long countingAllReservesByEventId(Long eventId) {
+    public Long countingAllUsersReservedByEventId(Long eventId) {
         validateEventId(eventId);
 
-        log.info("Counting reservations by eventId={}", eventId);
+        log.info("Counting all users that reserved this eventId={}", eventId);
 
-        return repository.countByEventId(eventId);
+        return repository.countDistinctUsersByEventId(eventId);
     }
 
     @Transactional(readOnly = true)

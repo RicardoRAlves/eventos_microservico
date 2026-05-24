@@ -62,7 +62,7 @@ public class UserReservationEventController {
     ) {
         log.info("Counting all reservation events by eventId={}", eventId);
 
-        var count = service.countingAllReservesByEventId(eventId);
+        var count = service.countingAllUsersReservedByEventId(eventId);
 
         log.info("Returning count of users reserved for event. count={}", count);
 
