@@ -22,7 +22,14 @@ public interface UserReservationEventRepository
 
     long countByEventSaleId(Long eventSaleId);
 
-    long countByEventId(Long eventId);
+    @Query("""
+    SELECT COUNT(DISTINCT r.userId)
+    FROM UserReservationEvent r
+    WHERE r.eventId = :eventId
+""")
+    long countDistinctUsersByEventId(
+            @Param("eventId") Long eventId
+    );
 
     boolean existsByUserIdAndEventSaleId(
             Long userId,

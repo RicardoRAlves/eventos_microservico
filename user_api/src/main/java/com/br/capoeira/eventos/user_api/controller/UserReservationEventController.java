@@ -38,6 +38,21 @@ public class UserReservationEventController {
         return ResponseEntity.ok(reservations);
     }
 
+    @GetMapping("/event/{eventId}")
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<List<UserReservationEventResponseDto>>
+    findAllReservationEventsByEvent(
+            @PathVariable Long eventId
+    ) {
+        log.info("Finding all reservation events for eventId={}", eventId);
+
+        var reservations = service.findAllReservedEventsByEventId(eventId);
+
+        log.info("Returning {} reservation events for all users", reservations.size());
+
+        return ResponseEntity.ok(reservations);
+    }
+
     @GetMapping("/count/users/event/{eventId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     @SecurityRequirement(name = "bearerAuth")
@@ -47,7 +62,7 @@ public class UserReservationEventController {
     ) {
         log.info("Counting all reservation events by eventId={}", eventId);
 
-        var count = service.countingAllReservesByEventId(eventId);
+        var count = service.countingAllUsersReservedByEventId(eventId);
 
         log.info("Returning count of users reserved for event. count={}", count);
 
