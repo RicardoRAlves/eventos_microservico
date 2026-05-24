@@ -6,39 +6,70 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.cloud.FirestoreClient;
 import com.google.firebase.messaging.FirebaseMessaging;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 
 import javax.annotation.PostConstruct;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Configuration
 @ConditionalOnProperty(name = "firebase.enabled", havingValue = "true", matchIfMissing = true)
 public class FirebaseConfig {
 
-    private static final String CONFIG_NAME = "firebase_config.json";
+    @Value("${FIREBASE_CONFIG:}")
+    private String firebaseConfig;
 
     @PostConstruct
-    public void initializeFirebaseApp() throws IOException {
-        if (FirebaseApp.getApps().isEmpty()) {
+    public void initializeFirebaseApp() {
+        try {
 
-            var resource = new ClassPathResource(CONFIG_NAME);
-            if (!resource.exists()) {
-                throw new IOException("Resource File not found");
-            }
+            InputStream serviceAccount =
+                    getFirebaseCredentials();
 
-            try (var serviceAccount = resource.getInputStream()) {
-                var options = FirebaseOptions.builder()
-                        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
-                        .build();
+            FirebaseOptions options = FirebaseOptions.builder()
+                    .setCredentials(
+                            GoogleCredentials.fromStream(serviceAccount)
+                    )
+                    .build();
 
+            if (FirebaseApp.getApps().isEmpty()) {
                 FirebaseApp.initializeApp(options);
-                log.info("Firebase Admin SDK initialized!!.");
             }
+
+        } catch (Exception e) {
+            throw new RuntimeException(
+                    "Error initializing Firebase",
+                    e
+            );
         }
+    }
+
+    private InputStream getFirebaseCredentials()
+            throws IOException {
+
+        ClassPathResource resource =
+                new ClassPathResource("firebase_config.json");
+
+        if (resource.exists()) {
+            return resource.getInputStream();
+        }
+
+        if (!firebaseConfig.isBlank()) {
+            return new ByteArrayInputStream(
+                    firebaseConfig.getBytes(StandardCharsets.UTF_8)
+            );
+        }
+
+        throw new IOException(
+                "Firebase credentials not found"
+        );
     }
 
     @Bean
