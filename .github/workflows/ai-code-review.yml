@@ -2,7 +2,10 @@ name: AI Assisted Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   contents: read
@@ -24,22 +27,32 @@ jobs:
           git fetch origin ${{ github.base_ref }}
           git diff origin/${{ github.base_ref }}...HEAD > pr-diff.txt
 
+          echo "=== DIFF SIZE ==="
+          wc -c pr-diff.txt
+
       - name: Run AI Code Review
         id: ai_review
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "❌ OPENROUTER_API_KEY is not configured." > ai-review.md
+            exit 0
+          fi
+
+          PROMPT="You are a senior software engineer. Review the Pull Request diff and provide improvement suggestions. Focus on SOLID principles, Clean Code, potential bugs, security concerns, testability, maintainability, Spring Boot best practices and performance issues. Ignore formatting issues already covered by linters. Do not approve or reject the PR. Return only improvement suggestions in markdown."
+
           REVIEW=$(jq -Rs . < pr-diff.txt)
 
           RESPONSE=$(curl -s https://openrouter.ai/api/v1/chat/completions \
-            -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+            -H "Authorization: Bearer ${OPENROUTER_API_KEY}" \
             -H "Content-Type: application/json" \
             -d "{
               \"model\": \"openrouter/free\",
               \"messages\": [
                 {
                   \"role\": \"system\",
-                  \"content\": \"You are a senior software engineer. Review the Pull Request diff and suggest improvements. Focus on clean code, SOLID, bugs, tests, security, readability, and maintainability. Do not approve or reject the PR. Only provide constructive suggestions.\"
+                  \"content\": \"$PROMPT\"
                 },
                 {
                   \"role\": \"user\",
@@ -48,7 +61,21 @@ jobs:
               ]
             }")
 
-          echo "$RESPONSE" | jq -r '.choices[0].message.content' > ai-review.md
+          echo "=== OPENROUTER RESPONSE ==="
+          echo "$RESPONSE"
+
+          CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
+
+          if [ -z "$CONTENT" ]; then
+            echo "⚠️ No AI review was generated." > ai-review.md
+            echo "" >> ai-review.md
+            echo "OpenRouter response:" >> ai-review.md
+            echo '```json' >> ai-review.md
+            echo "$RESPONSE" >> ai-review.md
+            echo '```' >> ai-review.md
+          else
+            echo "$CONTENT" > ai-review.md
+          fi
 
       - name: Comment AI review on PR
         uses: actions/github-script@v7
@@ -66,7 +93,7 @@ jobs:
 
             _This review was generated automatically by an AI-assisted pipeline. Final approval remains human-driven._`;
 
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
