@@ -1,155 +1,249 @@
-# 🥋 Event Manager - Microservices Architecture
+# 🥋 Event Manager Platform
 
-A scalable **event-driven microservices platform** designed to manage Capoeira events across organizations and units, with real-time notifications and distributed data synchronization.
+A real-world event management platform built to support Capoeira communities through event organization, reservations, notifications, and cultural engagement.
 
----
-
-## 🚀 Overview
-
-This project demonstrates a **real-world backend architecture** built with:
-
-* Event-driven communication (RabbitMQ)
-* Multi-tenant design (organization + unit)
-* Real-time updates (Firebase Cloud Messaging)
-* Distributed data synchronization (Full Sync strategy)
-
-It was designed to solve a common problem:
-
-> How to reliably deliver and synchronize event data across multiple users and devices in a scalable way.
+The project was designed as a complete microservices ecosystem focused on scalability, asynchronous communication, multi-tenancy, and mobile synchronization.
 
 ---
 
-## 🧠 Key Concepts
+# 🚀 Project Goals
 
-* **Event-driven architecture**
-* **Topic-based notification (FCM)**
-* **Multi-tenant isolation**
-* **Eventual consistency**
-* **Scoped data synchronization (GET_ALL)**
+This project has two primary objectives:
 
----
+### Social Impact
 
-## 🧩 Microservices Architecture
+Provide an accessible platform that helps Capoeira groups organize and promote cultural events while strengthening community engagement.
 
-### 👤 User API
+### Technical Exploration
 
-* Authentication & authorization (JWT)
-* User management
-* Organization association via `joinCode`
+Serve as a playground for modern software architecture and engineering practices, including:
 
----
-
-### 📌 Event API
-
-* Entry point for event creation
-* Validates business rules
-* Uploads assets (AWS S3)
-* Publishes events to RabbitMQ
+* Event-Driven Architecture
+* Microservices
+* Distributed Systems
+* Eventual Consistency
+* Multi-Tenant Design
+* Mobile Synchronization
+* Real-Time Notifications
+* CI/CD Automation
+* AI-Assisted Code Reviews
 
 ---
 
-### ⚙️ Processor API
+# 💡 Why This Project Matters
 
-* Consumes events from RabbitMQ
-* Persists data in PostgreSQL
-* Acts as the **source of truth**
+Unlike typical CRUD portfolio projects, this platform explores several real-world engineering challenges:
 
----
+* Event-driven communication
+* Distributed data synchronization
+* Multi-tenant isolation
+* Real-time notifications
+* Asynchronous processing
+* Role-based security
+* Eventual consistency
+* Mobile offline synchronization
+* Automated quality gates
+* AI-assisted code reviews
 
-### 🔔 Notification API
-
-* Integrates with Firebase (FCM + Firestore)
-* Resolves delivery topics
-* Sends real-time notifications
-* Handles full sync (`GET_ALL`)
-
----
-
-### 🏢 Organization API
-
-* Manages organizations and units
-* Generates and validates `joinCode`
-* Provides multi-tenant structure
+The goal was not only to build an application but to experiment with architectural patterns commonly found in production environments.
 
 ---
 
-## 🔄 Architecture Flow
+# 🧩 Core Features
+
+## Event Management
+
+* Create and update events
+* Event image upload
+* Public, Organization and Unit visibility scopes
+* Real-time event propagation
+
+## Reservations
+
+* Reserve event items
+* User reservation dashboard
+* Reservation statistics for administrators
+* Availability tracking
+
+## Favorites
+
+* Save favorite events
+* Device synchronization
+* Personalized event experience
+
+## Notifications
+
+* Real-time Firebase notifications
+* Topic-based delivery
+* Organization-level notifications
+* Unit-level notifications
+
+## Administration
+
+* Organization management
+* Unit management
+* Role-based access control
+* Multi-tenant governance
+
+---
+
+# 🏗️ Architecture Overview
+
+The platform follows an event-driven architecture where event creation, persistence and notification delivery are fully decoupled.
 
 ```text
-Client → Event API → RabbitMQ → Processor API → Notification API → FCM → Mobile App
+Client
+   │
+   ▼
+Event API
+   │
+   ▼
+RabbitMQ
+   │
+   ▼
+Processor API
+   │
+   ▼
+Notification API
+   │
+   ▼
+Firebase Cloud Messaging
+   │
+   ▼
+Mobile Application
 ```
 
 ---
 
-## 🔔 Notification & Sync Strategy
+# 🔧 Microservices
 
-### Topic-Based Delivery
+## 👤 User API
 
-| Scope        | Topic                       |
-| ------------ | --------------------------- |
-| PUBLIC       | `public`                    |
-| ORGANIZATION | `org_<organizationId>`      |
-| UNIT         | `unit_<organizationUnitId>` |
+Responsibilities:
+
+* Authentication
+* Authorization
+* JWT generation
+* User management
+* Organization association via joinCode
 
 ---
+
+## 📌 Event API
+
+Responsibilities:
+
+* Event creation
+* Event updates
+* Business rule validation
+* Asset upload (AWS S3)
+* RabbitMQ publishing
+
+---
+
+## ⚙️ Processor API
+
+Responsibilities:
+
+* RabbitMQ consumption
+* Event persistence
+* PostgreSQL management
+* Source of truth for events
+
+---
+
+## 🔔 Notification API
+
+Responsibilities:
+
+* Firebase Cloud Messaging integration
+* Firestore synchronization
+* Topic resolution
+* Notification delivery
+* Full synchronization support
+
+---
+
+## 🏢 Organization API
+
+Responsibilities:
+
+* Organization management
+* Unit management
+* JoinCode generation
+* Multi-tenant structure
+
+---
+
+# 🔄 Technical Challenges Solved
+
+## Eventual Consistency
+
+Events are processed asynchronously through RabbitMQ while maintaining consistency across independent services.
+
+## Multi-Tenant Isolation
+
+Users only access data belonging to their organization and unit.
+
+## Distributed Synchronization
+
+A full synchronization strategy allows mobile devices to recover from data inconsistencies.
+
+## Real-Time Notification Routing
+
+Notifications are dynamically routed based on organization and unit membership.
+
+---
+
+# 🔔 Notification Strategy
+
+## Topic-Based Delivery
+
+| Scope        | Topic                     |
+| ------------ | ------------------------- |
+| Public       | public                    |
+| Organization | org_<organizationId>      |
+| Unit         | unit_<organizationUnitId> |
 
 ### Example
 
 A user from:
 
-* organization `1`
-* unit `10`
+* Organization 1
+* Unit 10
 
-Receives events from:
+Receives notifications from:
 
-* `public`
-* `org_1`
-* `unit_10`
-
----
-
-## 🔄 Full Sync (Data Reconciliation)
-
-The system implements a **scope-based full sync strategy**:
-
-* Fixes inconsistencies across devices
-* Avoids global data overwrite
-* Ensures tenant isolation
-
-👉 See:
-`/docs/flows/full-sync-flow.md`
+* public
+* org_1
+* unit_10
 
 ---
 
-## 📊 Documentation
+# 🔄 Full Sync Strategy
 
-Detailed architecture and business rules are documented:
+The platform implements a scope-based full synchronization mechanism.
 
-### 📁 Architecture
+Benefits:
 
-* `docs/architecture/overview.md`
-* `docs/architecture/integrations.md`
+* Device recovery after offline periods
+* Event reconciliation
+* Tenant isolation preservation
+* Reduced data inconsistencies
 
-### 📁 Business Rules
+Documentation:
 
-* `docs/business-rules/event-api.md`
-* `docs/business-rules/processor-api.md`
-* `docs/business-rules/notification-api.md`
-* `docs/business-rules/user-api.md`
-* `docs/business-rules/organization-api.md`
-
-### 📁 Flows
-
-* `docs/flows/notification-flow.md`
-* `docs/flows/full-sync-flow.md`
+```text
+/docs/flows/full-sync-flow.md
+```
 
 ---
 
-## 🔐 Authentication & Authorization
+# 🔐 Authentication & Authorization
 
-Authentication is centralized in **User API** using JWT.
+Authentication is centralized through the User API using JWT.
 
-### Example Token
+Example token:
 
 ```json
 {
@@ -161,123 +255,201 @@ Authentication is centralized in **User API** using JWT.
 }
 ```
 
-### Flow
+Flow:
 
-1. User logs in via User API
-2. Receives JWT
-3. Sends token in requests
-4. Services validate and enforce roles
+1. User authenticates
+2. JWT is issued
+3. Token is propagated across services
+4. Services enforce role-based authorization
 
 ---
 
-## 📡 Example Request
+# 🗄️ Data Storage
 
-### Login
+| Technology | Purpose                     |
+| ---------- | --------------------------- |
+| PostgreSQL | Core transactional data     |
+| MongoDB    | Event API support           |
+| Firestore  | Event synchronization layer |
+| AWS S3     | Image and file storage      |
+
+---
+
+# 🐇 Messaging
+
+RabbitMQ is used for:
+
+* Event propagation
+* Service decoupling
+* Asynchronous processing
+* Scalability
+* Eventual consistency
+
+---
+
+# 🧪 Quality Engineering
+
+This project includes multiple automated quality gates.
+
+### Testing
+
+* Unit Tests
+* Integration Tests
+* Testcontainers
+
+### Static Analysis
+
+* Qodana
+
+### Code Quality
+
+* Code Coverage Reports
+
+### AI-Assisted Code Review
+
+GitHub Actions + OpenRouter
+
+The AI review pipeline analyzes Pull Requests and provides suggestions related to:
+
+* SOLID principles
+* Clean Code
+* Security
+* Testability
+* Maintainability
+* Spring Boot best practices
+
+Final approval remains human-driven.
+
+---
+
+# ⚙️ DevOps
+
+### Docker
 
 ```bash
-curl -X POST http://localhost:8082/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "admin@test.com",
-    "password": "123456"
-  }'
+docker compose up --build -d
 ```
 
----
+### CI/CD Pipeline
 
-## 🗄️ Data Storage
+Quality Gates:
 
-* **PostgreSQL** → main data (processor + organization)
-* **MongoDB** → event-api support
-* **Firestore** → event snapshot layer
-* **AWS S3** → file storage
-
----
-
-## 📡 Messaging
-
-* RabbitMQ for async communication
-* Decoupled services
-* Scalable event propagation
+* Build Validation
+* Automated Tests
+* Coverage Analysis
+* Qodana Static Analysis
+* AI-Assisted Code Review
 
 ---
 
-## 📊 Diagrams
+# 📊 Architecture Diagrams
 
-### Architecture
+### Architecture Overview
 
 ![Architecture](./docs/images/architecture-diagram.png)
 
----
 ### Notification Flow
 
 ![Notification Flow](./docs/images/notification-flow.png)
 
 ---
 
-## ▶️ Running the Project
+# 🌐 API Documentation
 
-```bash
-docker compose up --build -d
+### Swagger
+
+Event API
+
+```text
+http://localhost:8080/swagger-ui/index.html
+```
+
+Organization API
+
+```text
+http://localhost:8081/swagger-ui/index.html
+```
+
+User API
+
+```text
+http://localhost:8082/swagger-ui/index.html
 ```
 
 ---
 
-## 🌐 Swagger
+# 📚 Documentation
 
-* Event API → http://localhost:8080/swagger-ui/index.html
-* Organization API → http://localhost:8081/swagger-ui/index.html
-* User API → http://localhost:8082/swagger-ui/index.html
+## Architecture
+
+* docs/architecture/overview.md
+* docs/architecture/integrations.md
+
+## Business Rules
+
+* docs/business-rules/event-api.md
+* docs/business-rules/processor-api.md
+* docs/business-rules/notification-api.md
+* docs/business-rules/user-api.md
+* docs/business-rules/organization-api.md
+
+## Flows
+
+* docs/flows/notification-flow.md
+* docs/flows/full-sync-flow.md
 
 ---
 
-## 🐇 RabbitMQ
+# 🛠️ Technology Stack
 
-http://localhost:15672/
+## Backend
 
-```
-username: rabbitmq
-password: rabbitmq
-```
+* Java 17
+* Spring Boot
+* Spring Security
+* JWT
 
----
+## Messaging
 
-## 🧠 Tech Stack
-
-* Java 17 + Spring Boot
-* Spring Security (JWT)
 * RabbitMQ
+
+## Databases
+
 * PostgreSQL
 * MongoDB
-* Firebase (FCM + Firestore)
+* Firestore
+
+## Cloud
+
 * AWS S3
+* Firebase Cloud Messaging
+
+## DevOps
+
 * Docker
+* GitHub Actions
+* Qodana
+* OpenRouter
 
 ---
 
-## 💡 Highlights (Why this project matters)
-
-* Real-world microservices architecture
-* Event-driven communication
-* Scalable notification system (FCM topics)
-* Multi-tenant data isolation
-* Distributed sync strategy (advanced topic)
-
----
-
-## 🚀 Future Improvements
+# 🚀 Future Improvements
 
 * API Gateway (Spring Cloud Gateway)
-* Observability (OpenTelemetry)
-* Centralized logging (ELK)
-* CI/CD pipeline
-* Rate limiting
+* OpenTelemetry
+* Distributed Tracing
+* ELK Stack
+* Centralized Logging
+* Rate Limiting
+* Kubernetes Deployment
+* Service Discovery
 
 ---
 
-## 👨‍💻 Author
+# 👨‍💻 Author
 
-**Ricardo Rodrigues Alves**
-Backend Developer | Java | Microservices | Android
+Ricardo Rodrigues Alves
 
----
+Backend Engineer | Java | Spring Boot | Microservices | Android
+
+Building software with a focus on scalability, maintainability, and real-world architecture challenges.
