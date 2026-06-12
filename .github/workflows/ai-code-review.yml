@@ -1,0 +1,129 @@
+name: AI Assisted Code Review
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  ai-code-review:
+    name: AI Code Review
+    runs-on: ubuntu-latest
+
+    env:
+      OPENROUTER_MODEL: openrouter/free
+      MAX_DIFF_LINES: 500
+      MAX_RESPONSE_CHARS: 10000
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate PR diff
+        run: |
+          git fetch origin ${{ github.base_ref }}
+          git diff origin/${{ github.base_ref }}...HEAD > pr-diff.txt
+
+          echo "=== DIFF INFO ==="
+          wc -l pr-diff.txt
+          wc -c pr-diff.txt
+
+          if [ ! -s pr-diff.txt ]; then
+            echo "✅ No changes detected." > ai-review.md
+          fi
+
+      - name: Run AI Code Review
+        id: ai_review
+        env:
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          if [ -f ai-review.md ]; then
+            exit 0
+          fi
+
+          if [ -z "$OPENROUTER_API_KEY" ]; then
+            echo "❌ OPENROUTER_API_KEY is not configured." > ai-review.md
+            exit 0
+          fi
+
+          DIFF_LINES=$(wc -l < pr-diff.txt)
+
+          if [ "$DIFF_LINES" -gt "$MAX_DIFF_LINES" ]; then
+            echo "⚠️ Diff is too large for a single AI review." > ai-review.md
+            echo "" >> ai-review.md
+            echo "Changed lines in diff: $DIFF_LINES" >> ai-review.md
+            echo "Limit configured: $MAX_DIFF_LINES" >> ai-review.md
+            echo "" >> ai-review.md
+            echo "Please consider splitting this PR into smaller changes or increasing MAX_DIFF_LINES." >> ai-review.md
+            exit 0
+          fi
+
+          PROMPT="You are a senior software engineer. Review the Pull Request diff and provide improvement suggestions. Focus on SOLID principles, Clean Code, potential bugs, security concerns, testability, maintainability, Spring Boot best practices and performance issues. Ignore formatting issues already covered by linters. Do not approve or reject the PR. Return only improvement suggestions in markdown."
+
+          REVIEW=$(jq -Rs . < pr-diff.txt)
+
+          RESPONSE=$(curl -s --max-time 30 https://openrouter.ai/api/v1/chat/completions \
+            -H "Authorization: Bearer ${OPENROUTER_API_KEY}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"model\": \"${OPENROUTER_MODEL}\",
+              \"messages\": [
+                {
+                  \"role\": \"system\",
+                  \"content\": \"$PROMPT\"
+                },
+                {
+                  \"role\": \"user\",
+                  \"content\": $REVIEW
+                }
+              ]
+            }")
+
+          echo "=== OPENROUTER RESPONSE ==="
+          echo "$RESPONSE"
+
+          CONTENT=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
+
+          if [ -z "$CONTENT" ]; then
+            echo "⚠️ No AI review was generated." > ai-review.md
+            echo "" >> ai-review.md
+            echo "OpenRouter response:" >> ai-review.md
+            echo '```json' >> ai-review.md
+            echo "$RESPONSE" >> ai-review.md
+            echo '```' >> ai-review.md
+          else
+            echo "$CONTENT" | head -c "$MAX_RESPONSE_CHARS" > ai-review.md
+          fi
+
+          rm -f pr-diff.txt
+
+      - name: Comment AI review on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            const review = fs.readFileSync('ai-review.md', 'utf8');
+
+            const body = `## 🤖 AI-Assisted Code Review
+
+            ${review}
+
+            ---
+
+            _This review was generated automatically by an AI-assisted pipeline. Final approval remains human-driven._`;
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body
+            });
