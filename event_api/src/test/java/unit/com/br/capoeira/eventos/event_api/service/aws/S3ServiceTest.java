@@ -1,6 +1,7 @@
 package unit.com.br.capoeira.eventos.event_api.service.aws;
 
 
+import com.br.capoeira.eventos.event_api.config.exception.FileException;
 import com.br.capoeira.eventos.event_api.service.aws.S3Service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,11 +20,13 @@ import software.amazon.awssdk.services.s3.model.GetUrlRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -120,5 +123,65 @@ public class S3ServiceTest {
         verify(s3Client).deleteObject(captor.capture());
 
         assertThat(captor.getValue().key()).isEqualTo("photo.jpg");
+    }
+
+    @Test
+    void uploadFile_shouldThrowFileException_whenMultipartFileThrowsIOException() throws Exception {
+        var multipartFile = mock(MultipartFile.class);
+
+        when(multipartFile.getOriginalFilename()).thenReturn("foto.jpg");
+        when(multipartFile.getInputStream()).thenThrow(new IOException("read error"));
+
+        var exception = assertThrows(
+                FileException.class,
+                () -> s3Service.uploadFile(multipartFile)
+        );
+
+        assertThat(exception.getMessage())
+                .contains("Error while trying to upload S3 file read error");
+
+        verify(s3Client, never()).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    }
+
+    @Test
+    void uploadFile_shouldThrowFileException_whenUrlCannotBeConvertedToUri() throws Exception {
+        var multipartFile = mock(MultipartFile.class);
+        var inputStream = new ByteArrayInputStream("conteudo".getBytes());
+
+        URL invalidUrl = new URL("https://my-bucket.s3.amazonaws.com/photo with space.jpg");
+
+        when(multipartFile.getOriginalFilename()).thenReturn("foto.jpg");
+        when(multipartFile.getInputStream()).thenReturn(inputStream);
+        when(multipartFile.getContentType()).thenReturn("image/jpeg");
+
+        when(s3Client.putObject(any(PutObjectRequest.class), any(RequestBody.class)))
+                .thenReturn(null);
+
+        stubS3Utilities(invalidUrl);
+
+        var exception = assertThrows(
+                FileException.class,
+                () -> s3Service.uploadFile(multipartFile)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Erro ao converter URL para URI");
+
+        verify(s3Client).putObject(any(PutObjectRequest.class), any(RequestBody.class));
+    }
+
+    @Test
+    void deleteImage_shouldThrowFileException_whenUriIsInvalid() {
+        var invalidUri = "http://[invalid-url";
+
+        var exception = assertThrows(
+                FileException.class,
+                () -> s3Service.deleteImage(invalidUri)
+        );
+
+        assertThat(exception.getMessage())
+                .isEqualTo("Invalid URI, please check it: " + invalidUri);
+
+        verify(s3Client, never()).deleteObject(any(DeleteObjectRequest.class));
     }
 }
