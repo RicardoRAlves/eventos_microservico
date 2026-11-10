@@ -1,0 +1,8 @@
+target/
+build/
+.aider*
+.idea/
+*.iml
+.env
+.env.*
+!.env.example
