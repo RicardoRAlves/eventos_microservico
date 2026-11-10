@@ -1,0 +1,138 @@
+services:
+  mongo-keyfile-init:
+    image: alpine:3.20
+    container_name: event-mongo-keyfile-init
+    restart: "no"
+    user: root
+    volumes:
+      - event_mongo_config:/mongo-config
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ ! -s /mongo-config/keyfile ]; then
+          umask 077
+          head -c 756 /dev/urandom | base64 | tr -d '\n' > /mongo-config/keyfile
+        fi
+        chown 999:999 /mongo-config/keyfile
+        chmod 400 /mongo-config/keyfile
+
+  event-mongo-db:
+    image: mongo:7.0
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/data/configdb/keyfile"]
+    volumes:
+      - event_mongo_data:/data/db
+      - event_mongo_config:/data/configdb
+    depends_on:
+      mongo-keyfile-init:
+        condition: service_completed_successfully
+
+  event-mongo-rs-init:
+    image: mongo:7.0
+    container_name: event-mongo-rs-init
+    restart: "no"
+    depends_on:
+      event-mongo-db:
+        condition: service_healthy
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mongosh --quiet --host event-mongo-db:27017 \
+          --username "$${MONGO_INITDB_ROOT_USERNAME}" \
+          --password "$${MONGO_INITDB_ROOT_PASSWORD}" \
+          --authenticationDatabase admin \
+          --eval 'try { rs.status() } catch (error) { if (error.codeName === "NotYetInitialized") { rs.initiate({_id:"rs0",members:[{_id:0,host:"event-mongo-db:27017"}]}) } else { throw error } }'
+        until mongosh --quiet --host event-mongo-db:27017 \
+          --username "$${MONGO_INITDB_ROOT_USERNAME}" \
+          --password "$${MONGO_INITDB_ROOT_PASSWORD}" \
+          --authenticationDatabase admin \
+          --eval 'if (!db.hello().isWritablePrimary) { quit(1) }'; do sleep 1; done
+
+  s3-local:
+    image: rustfs/rustfs:1.0.3
+    container_name: s3-local
+    restart: unless-stopped
+    env_file:
+      - ./variaveis.local.env
+    environment:
+      RUSTFS_VOLUMES: /data
+      RUSTFS_ADDRESS: ":9000"
+      RUSTFS_CONSOLE_ENABLE: "false"
+    ports:
+      - "4566:9000"
+    volumes:
+      - s3_local_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://127.0.0.1:9000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  s3-local-init:
+    image: rustfs/rc:v0.1.37
+    container_name: s3-local-init
+    restart: "no"
+    env_file:
+      - ./variaveis.local.env
+    depends_on:
+      s3-local:
+        condition: service_healthy
+    volumes:
+      - ./docker/s3/public-read-policy.json:/policies/public-read-policy.json:ro
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        /usr/bin/rc alias set local http://s3-local:9000 "$${RUSTFS_ACCESS_KEY}" "$${RUSTFS_SECRET_KEY}" >/dev/null
+        /usr/bin/rc bucket create local/cultura-conecta-local --ignore-existing
+        /usr/bin/rc bucket anonymous set-json /policies/public-read-policy.json local/cultura-conecta-local
+
+  event-api:
+    env_file: !override
+      - ./variaveis.local.env
+    environment:
+      SPRING_DATA_MONGODB_URI: mongodb://admin:123456@event-mongo-db:27017/event_api?authSource=admin&replicaSet=rs0
+    depends_on:
+      event-mongo-rs-init:
+        condition: service_completed_successfully
+      s3-local-init:
+        condition: service_completed_successfully
+
+  organization-api:
+    env_file: !override
+      - ./variaveis.local.env
+    environment:
+      USER_API_URL_BASE: http://user-api:8082
+    depends_on:
+      s3-local-init:
+        condition: service_completed_successfully
+
+  user-api:
+    env_file: !override
+      - ./variaveis.local.env
+    depends_on:
+      s3-local-init:
+        condition: service_completed_successfully
+
+  processor-api:
+    ports:
+      - "8083:8083"
+
+  notification-api:
+    env_file: !override
+      - ./variaveis.local.env
+    environment:
+      FIREBASE_EXPECTED_PROJECT_ID: events-capoeira-homologacao
+      FIREBASE_ALLOW_CLASSPATH_CREDENTIALS: "false"
+    ports:
+      - "8084:8084"
+
+volumes:
+  event_mongo_data:
+  event_mongo_config:
+  s3_local_data:

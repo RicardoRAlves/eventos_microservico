@@ -2,6 +2,7 @@ package com.br.capoeira.eventos.event_api.controller;
 
 import com.br.capoeira.eventos.event_api.config.SecurityConfig;
 import com.br.capoeira.eventos.event_api.config.exception.GlobalHandlerException;
+import com.br.capoeira.eventos.event_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.event_api.dto.EventCreateRequestDto;
 import com.br.capoeira.eventos.event_api.dto.EventDeleteRequestDto;
 import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
@@ -100,6 +101,22 @@ class EventControllerIntegrationTest {
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
         verify(service).sendingNewEventToProcessor(any(EventCreateRequestDto.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void categoryNotFoundShouldKeepHttp404Contract() throws Exception {
+        var requestDto = getMockEventCreateRequestDto();
+        given(service.sendingNewEventToProcessor(any(EventCreateRequestDto.class)))
+                .willThrow(new ValidationException("Category not found"));
+
+        mockMvc.perform(post("/api/v1/evento/create")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
