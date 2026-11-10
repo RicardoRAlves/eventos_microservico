@@ -2,3 +2,4 @@
 /.idea/.*
 /eventApi_accessKeys.csv
 /variaveis.env
+/variaveis.local.env
