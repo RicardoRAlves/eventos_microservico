@@ -1,0 +1,224 @@
+services:
+  mongo-keyfile-init:
+    image: alpine:3.20
+    container_name: event-mongo-keyfile-init
+    restart: "no"
+    user: root
+    volumes:
+      - event_mongo_config:/mongo-config
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        if [ ! -s /mongo-config/keyfile ]; then
+          umask 077
+          head -c 756 /dev/urandom | base64 | tr -d '\n' > /mongo-config/keyfile
+        fi
+        chown 999:999 /mongo-config/keyfile
+        chmod 400 /mongo-config/keyfile
+
+  event-mongo-db:
+    image: mongo:7.0
+    container_name: event-mongo-db
+    restart: always
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/data/configdb/keyfile"]
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=123456
+    ports:
+      - 27017:27017
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - event_mongo_data:/data/db
+      - event_mongo_config:/data/configdb
+    depends_on:
+      mongo-keyfile-init:
+        condition: service_completed_successfully
+
+  event-mongo-rs-init:
+    image: mongo:7.0
+    container_name: event-mongo-rs-init
+    restart: "no"
+    depends_on:
+      event-mongo-db:
+        condition: service_healthy
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: 123456
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        mongosh --quiet --host event-mongo-db:27017 \
+          --username "$${MONGO_INITDB_ROOT_USERNAME}" \
+          --password "$${MONGO_INITDB_ROOT_PASSWORD}" \
+          --authenticationDatabase admin \
+          --eval 'try { rs.status() } catch (error) { if (error.codeName === "NotYetInitialized") { rs.initiate({_id:"rs0",members:[{_id:0,host:"event-mongo-db:27017"}]}) } else { throw error } }'
+        until mongosh --quiet --host event-mongo-db:27017 \
+          --username "$${MONGO_INITDB_ROOT_USERNAME}" \
+          --password "$${MONGO_INITDB_ROOT_PASSWORD}" \
+          --authenticationDatabase admin \
+          --eval 'if (!db.hello().isWritablePrimary) { quit(1) }'; do sleep 1; done
+
+  rabbitmq:
+    image: rabbitmq:3.10.5-management
+    container_name: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: 'rabbitmq'
+      RABBITMQ_DEFAULT_PASS: 'rabbitmq'
+    ports:
+      - '15672:15672'
+      - '5672:5672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - rabbitmq_log:/var/lib/rabbitmq/log
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgres:
+    image: postgres:15.7
+    restart: unless-stopped
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  event-api:
+    build:
+      context: ./event_api
+      dockerfile: Dockerfile
+    container_name: event-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./variaveis.env
+    depends_on:
+      event-mongo-rs-init:
+        condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: rabbitmq
+      RABBIT_PASSWORD: rabbitmq
+      MONGO_USER: admin
+      MONGO_PASS: 123456
+      MONGO_HOST: event-mongo-db
+      MONGO_DB: admin
+      SPRING_DATA_MONGODB_URI: mongodb://admin:123456@event-mongo-db:27017/event_api?authSource=admin&replicaSet=rs0
+      ORGANIZATION_API_URL_BASE: http://organization-api:8081
+      ORGANIZATION_API_URL_ENDPOINT: /api/v1/organizacao/unit/
+
+  processor-api:
+    build:
+      context: ./processor_api
+      dockerfile: Dockerfile
+    container_name: processor-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: rabbitmq
+      RABBIT_PASSWORD: rabbitmq
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: eventos_api
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+
+  notification-api:
+    build:
+      context: ./notification_api
+      dockerfile: Dockerfile
+    container_name: notification-api
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: rabbitmq
+      RABBIT_PASSWORD: rabbitmq
+      FIREBASE_CONFIG: ${FIREBASE_CONFIG:?FIREBASE_CONFIG is required for homologation}
+      FIREBASE_EXPECTED_PROJECT_ID: events-capoeira-homologacao
+      FIREBASE_ALLOW_CLASSPATH_CREDENTIALS: "false"
+      JAVA_OPTS: >-
+        --add-opens java.base/java.time.chrono=ALL-UNNAMED
+        --add-opens java.base/java.time.format=ALL-UNNAMED
+        --add-opens java.base/java.time.temporal=ALL-UNNAMED
+        --add-opens java.base/java.time.zone=ALL-UNNAMED
+
+  organization-api:
+    build:
+      context: ./organization_api
+      dockerfile: Dockerfile
+    container_name: organization-api
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./variaveis.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: organization_api
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+
+  user-api:
+    build:
+      context: ./user_api
+      dockerfile: Dockerfile
+    container_name: user-api
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./variaveis.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      RABBIT_HOST: rabbitmq
+      RABBIT_PORT: 5672
+      RABBIT_USERNAME: rabbitmq
+      RABBIT_PASSWORD: rabbitmq
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: user_api
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      ORGANIZATION_API_URL_BASE: http://organization-api:8081
+      ORGANIZATION_API_URL_ENDPOINT: /api/v1/organizacao/unit/code/
+
+volumes:
+  event_mongo_data:
+  event_mongo_config:
+  rabbitmq_data:
+  rabbitmq_log:
+  postgres_data:

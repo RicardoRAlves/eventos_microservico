@@ -2,7 +2,9 @@ package com.br.capoeira.eventos.event_api.controller;
 
 import com.br.capoeira.eventos.event_api.config.SecurityConfig;
 import com.br.capoeira.eventos.event_api.config.exception.GlobalHandlerException;
+import com.br.capoeira.eventos.event_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.event_api.dto.EventCreateRequestDto;
+import com.br.capoeira.eventos.event_api.dto.EventDeleteRequestDto;
 import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
 import com.br.capoeira.eventos.event_api.dto.EventUpdateRequestDto;
 import com.br.capoeira.eventos.event_api.enums.EventScope;
@@ -28,6 +30,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willDoNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -98,6 +101,22 @@ class EventControllerIntegrationTest {
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
         verify(service).sendingNewEventToProcessor(any(EventCreateRequestDto.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void categoryNotFoundShouldKeepHttp404Contract() throws Exception {
+        var requestDto = getMockEventCreateRequestDto();
+        given(service.sendingNewEventToProcessor(any(EventCreateRequestDto.class)))
+                .willThrow(new ValidationException("Category not found"));
+
+        mockMvc.perform(post("/api/v1/evento/create")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .accept(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404));
     }
 
     @Test
@@ -196,6 +215,41 @@ class EventControllerIntegrationTest {
         verify(service, never()).updateEvent(any(EventUpdateRequestDto.class));
     }
 
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void whenSendADeleteShouldReturnNoContent() throws Exception {
+        var requestDto = getMockEventDeleteRequestDto();
+
+        willDoNothing()
+                .given(service)
+                .deleteEventByTransactionId(any(EventDeleteRequestDto.class));
+
+        mockMvc.perform(delete("/api/v1/evento")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isNoContent());
+
+        verify(service).deleteEventByTransactionId(any(EventDeleteRequestDto.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "CLIENT")
+    void whenClientSendADeleteShouldReturnForbidden() throws Exception {
+        var requestDto = getMockEventDeleteRequestDto();
+
+        mockMvc.perform(delete("/api/v1/evento")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isForbidden());
+
+        verify(service, never()).deleteEventByTransactionId(any(EventDeleteRequestDto.class));
+    }
+
+    private EventDeleteRequestDto getMockEventDeleteRequestDto() {
+        return new EventDeleteRequestDto("1715536800000_uuid");
+    }
     private EventCreateRequestDto getMockEventCreateRequestDto() {
         return new EventCreateRequestDto(
                 "Batizado Bonfim",

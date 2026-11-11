@@ -1,0 +1,5 @@
+server:
+  port: 8085
+
+ai:
+  model: qwen2.5-coder:3b

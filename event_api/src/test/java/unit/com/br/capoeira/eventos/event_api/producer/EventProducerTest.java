@@ -1,5 +1,6 @@
 package unit.com.br.capoeira.eventos.event_api.producer;
 
+import com.br.capoeira.eventos.event_api.dto.EventDeleteResponseDto;
 import com.br.capoeira.eventos.event_api.dto.EventResponseDto;
 import com.br.capoeira.eventos.event_api.producer.EventProducer;
 import org.junit.jupiter.api.BeforeEach;
@@ -63,5 +64,25 @@ public class EventProducerTest {
         doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
         producer.sendingEventUpdatedToProcessor(eventResponseDto);
         verify(rabbitTemplate).convertAndSend(anyString(), anyString(), any(EventResponseDto.class));
+    }
+
+    @Test
+    void whenSendingEventDeletedToProcessor() {
+        ReflectionTestUtils.setField(
+                producer,
+                "exchangeDelete",
+                "event.delete.exchange"
+        );
+
+        var eventDeleteResponseDto = new EventDeleteResponseDto();
+        eventDeleteResponseDto.setTransactionId("wsdr-123");
+
+        producer.sendingEventDeletedToProcessor(eventDeleteResponseDto);
+
+        verify(rabbitTemplate).convertAndSend(
+                "event.delete.exchange",
+                "",
+                eventDeleteResponseDto
+        );
     }
 }

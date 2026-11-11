@@ -28,6 +28,8 @@
     </scm>
     <properties>
         <java.version>17</java.version>
+        <!-- The default artifact must never contain service-account credentials. -->
+        <firebase.config.resource.exclude>firebase_config.json</firebase.config.resource.exclude>
     </properties>
     <dependencies>
         <dependency>
@@ -98,6 +100,14 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>${firebase.config.resource.exclude}</exclude>
+                </excludes>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -131,5 +141,19 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!--
+          Migration-only support for environments that still require the legacy
+          classpath fallback. Runtime use also requires
+          FIREBASE_ALLOW_CLASSPATH_CREDENTIALS=true.
+        -->
+        <profile>
+            <id>firebase-classpath-fallback</id>
+            <properties>
+                <firebase.config.resource.exclude>__no_firebase_resource_excluded__</firebase.config.resource.exclude>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

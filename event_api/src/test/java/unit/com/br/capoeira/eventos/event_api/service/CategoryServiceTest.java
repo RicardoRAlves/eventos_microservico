@@ -216,16 +216,38 @@ public class CategoryServiceTest {
 
     @Test
     void shouldUpdateCategorySuccessfully() {
-        var requestDto = new CategoryUpdateRequestDto(1L, "Capoeira");
-        var existingCategory = getMockCategory(1L, "Capoeira", true);
-        var updatedCategory = getMockCategory(1L, "Capoeira", false);
-        var responseDto = getMockCategoryResponseDto(1L, "Capoeira", false);
 
-        when(repository.findById(any())).thenReturn(Optional.of(existingCategory));
-        when(repository.findByName(any())).thenReturn(Optional.of(existingCategory));
-        when(repository.save(existingCategory)).thenReturn(updatedCategory);
-        when(mapper.updateRequestDto(requestDto)).thenReturn(existingCategory);
-        when(mapper.categoryToResponseDto(updatedCategory)).thenReturn(responseDto);
+        var requestDto = new CategoryUpdateRequestDto(
+                1L,
+                "Capoeira"
+        );
+
+        var categoryFromMapper =
+                getMockCategory(1L, "Capoeira", true);
+
+        var existingCategory =
+                getMockCategory(1L, "Capoeira", true);
+
+        var updatedCategory =
+                getMockCategory(1L, "Capoeira", false);
+
+        var responseDto =
+                getMockCategoryResponseDto(1L, "Capoeira", false);
+
+        when(mapper.updateRequestDto(requestDto))
+                .thenReturn(categoryFromMapper);
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(existingCategory));
+
+        when(repository.findByName("Capoeira"))
+                .thenReturn(Optional.of(existingCategory));
+
+        when(repository.save(existingCategory))
+                .thenReturn(updatedCategory);
+
+        when(mapper.categoryToResponseDto(updatedCategory))
+                .thenReturn(responseDto);
 
         var response = service.update(requestDto);
 
@@ -233,8 +255,9 @@ public class CategoryServiceTest {
         assertEquals("Capoeira", response.getName());
         assertFalse(response.getActive());
 
-        verify(repository).findById(any());
-        verify(repository).findByName(any());
+        verify(mapper).updateRequestDto(requestDto);
+        verify(repository).findById(1L);
+        verify(repository).findByName("Capoeira");
         verify(repository).save(existingCategory);
         verify(mapper).categoryToResponseDto(updatedCategory);
     }
@@ -394,6 +417,44 @@ public class CategoryServiceTest {
         verify(repository).findByName("Capoeira");
         verify(repository, never()).save(any());
     }
+
+    @Test
+    void shouldThrowValidationExceptionWhenUpdateCategoryAndNameAlreadyExistsForAnotherCategory() {
+
+        var requestDto = getMockCategoryUpdateRequestDto(1L, "Music");
+
+        var categoryFromMapper = getMockCategory(1L, "Music", true);
+
+        var savedCategory = getMockCategory(1L, "Capoeira", true);
+
+        var existingCategoryWithSameName =
+                getMockCategory(2L, "Music", true);
+
+        when(mapper.updateRequestDto(requestDto))
+                .thenReturn(categoryFromMapper);
+
+        when(repository.findById(1L))
+                .thenReturn(Optional.of(savedCategory));
+
+        when(repository.findByName("Music"))
+                .thenReturn(Optional.of(existingCategoryWithSameName));
+
+        var exception = assertThrows(
+                ValidationException.class,
+                () -> service.update(requestDto)
+        );
+
+        assertEquals(
+                "Category already exists",
+                exception.getMessage()
+        );
+
+        verify(mapper).updateRequestDto(requestDto);
+        verify(repository).findById(1L);
+        verify(repository).findByName("Music");
+        verify(repository, never()).save(any());
+    }
+
 
     private Category getMockCategory(Long id, String name, Boolean active) {
         return Category.builder()

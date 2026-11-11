@@ -1,0 +1,7 @@
+{
+  "cases": [
+    {"id":"QA-CAT-001","endpoint_id":"EP-EVT-006","path":"/api/v1/categoria/all","expected_status":401,"expected_origin":"security_inference","description":"Categorias sem JWT"},
+    {"id":"QA-CAT-002","endpoint_id":"EP-EVT-007","path":"/api/v1/categoria/id/999999999","expected_status":401,"expected_origin":"security_inference","description":"Categoria por ID sem JWT"},
+    {"id":"QA-CAT-003","endpoint_id":"EP-EVT-008","path":"/api/v1/categoria/name/qa-agent-inexistente","expected_status":401,"expected_origin":"security_inference","description":"Categoria por nome sem JWT"}
+  ]
+}

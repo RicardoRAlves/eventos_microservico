@@ -97,9 +97,12 @@ public class CategoryService {
 
         var validateCategory = repository.findByName(category.getName());
 
-        if ((validateCategory.isPresent()) && (!Objects.equals(validateCategory.get().getId(), category.getId())) ){
+        if (validateCategory.isPresent()
+                && !Objects.equals(validateCategory.get().getId(), category.getId())) {
             throw new ValidationException("Category already exists");
         }
+
+        savedCategory.setName(category.getName());
 
         var updatedCategory = repository.save(savedCategory);
 

@@ -327,7 +327,12 @@ Final approval remains human-driven.
 ### Docker
 
 ```bash
-docker compose up --build -d
+# Local (uses variaveis.local.env for the notification-api)
+docker compose -f docker-compose.yml -f docker-compose.local.yml up --build -d
+
+# Homologation/production require FIREBASE_CONFIG in the execution environment.
+docker compose -f docker-compose.homolog.yml up --build -d
+docker compose -f docker-compose.prod.yml up --build -d
 ```
 
 ### CI/CD Pipeline

@@ -9,20 +9,43 @@ import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 
+import java.net.URI;
+
 @Configuration
 @RequiredArgsConstructor
 public class S3Config {
+
     @Value("${aws.access_key_id}")
     private String awsId;
+
     @Value("${aws.secret_access_key}")
     private String awsKey;
+
     @Value("${s3.region}")
     private String region;
+
+    @Value("${s3.endpoint:}")
+    private String endpoint;
+
+    @Value("${s3.path-style-access:false}")
+    private boolean pathStyleAccess;
+
     @Bean
-    public S3Client s3client(){
-        AwsBasicCredentials credentials = AwsBasicCredentials.create(awsId, awsKey);
-        return S3Client.builder().region(Region.of(region))
-                .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                .build();
+    public S3Client s3client() {
+        AwsBasicCredentials credentials =
+                AwsBasicCredentials.create(awsId, awsKey);
+
+        var builder = S3Client.builder()
+                .region(Region.of(region))
+                .credentialsProvider(
+                        StaticCredentialsProvider.create(credentials)
+                )
+                .forcePathStyle(pathStyleAccess);
+
+        if (endpoint != null && !endpoint.isBlank()) {
+            builder.endpointOverride(URI.create(endpoint));
+        }
+
+        return builder.build();
     }
 }

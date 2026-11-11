@@ -1,0 +1,6 @@
+__pycache__/
+.venv/
+reports/
+proposals.json
+environment.json
+observations.json
