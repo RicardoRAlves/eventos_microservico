@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.FirestoreEmulatorContainer;
+import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
@@ -27,14 +28,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Testcontainers
 class FirebaseEventServiceIntegrationTest {
 
-    static FirestoreEmulatorContainer firestoreEmulator =
+    @Container
+    static final FirestoreEmulatorContainer firestoreEmulator =
             new FirestoreEmulatorContainer(
-                    DockerImageName.parse("gcr.io/google.com/cloudsdktool/google-cloud-cli:441.0.0-emulators")
+                    DockerImageName.parse("gcr.io/google.com/cloudsdktool/google-cloud-cli:593.0.0-emulators")
             );
-
-    static {
-        firestoreEmulator.start();
-    }
 
     @Autowired
     private FirebaseEventService firebaseEventService;
