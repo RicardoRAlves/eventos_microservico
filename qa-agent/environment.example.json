@@ -1,0 +1,8 @@
+{
+  "isolated": true,
+  "base_urls": {
+    "event_api": "http://127.0.0.1:8080",
+    "organization_api": "http://127.0.0.1:8081",
+    "user_api": "http://127.0.0.1:8082"
+  }
+}

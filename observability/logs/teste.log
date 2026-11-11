@@ -1,0 +1,4 @@
+﻿INFO Aplicacao iniciada
+WARN Conexao lenta com banco de dados
+ERROR Falha ao consultar evento
+ERROR Teste com Alloy parado

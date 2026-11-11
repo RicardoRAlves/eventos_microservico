@@ -1,0 +1,50 @@
+services:
+  loki:
+    image: grafana/loki:3.7.0
+    container_name: observability-loki
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - ./loki/config.yml:/etc/loki/config.yml:ro
+      - loki-data:/loki
+    command:
+      - "-config.file=/etc/loki/config.yml"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:12.3.0
+    container_name: observability-grafana
+    ports:
+      - "127.0.0.1:3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.12.2
+    container_name: observability-alloy
+
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - ./logs:/var/log/app:ro
+      - alloy-data:/var/lib/alloy/data
+
+    command:
+      - run
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+
+    depends_on:
+      - loki
+
+    restart: unless-stopped
+
+volumes:
+  loki-data:
+  grafana-data:
+  alloy-data:
