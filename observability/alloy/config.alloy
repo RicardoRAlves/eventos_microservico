@@ -19,3 +19,159 @@ loki.write "local" {
     url = "http://loki:3100/loki/api/v1/push"
   }
 }
+
+local.file_match "event_api" {
+  path_targets = [
+    {
+      __path__     = "/var/log/app/event_api/*.log",
+      service_name = "event_api",
+      environment  = "local",
+      runtime      = "intellij",
+    },
+  ]
+}
+
+loki.source.file "event_api" {
+  targets    = local.file_match.event_api.targets
+  forward_to = [loki.process.event_api.receiver]
+}
+
+loki.process "event_api" {
+  stage.multiline {
+    firstline     = "^\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}"
+    max_wait_time = "3s"
+    max_lines     = 256
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+local.file_match "organization_api" {
+  path_targets = [
+    {
+      __path__     = "/var/log/app/organization_api/*.log",
+      service_name = "organization_api",
+      environment  = "local",
+      runtime      = "intellij",
+    },
+  ]
+}
+
+loki.source.file "organization_api" {
+  targets    = local.file_match.organization_api.targets
+  forward_to = [loki.process.organization_api.receiver]
+}
+
+loki.process "organization_api" {
+  stage.multiline {
+    firstline     = "^\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}"
+    max_wait_time = "3s"
+    max_lines     = 256
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+local.file_match "user_api" {
+  path_targets = [
+    {
+      __path__     = "/var/log/app/user_api/*.log",
+      service_name = "user_api",
+      environment  = "local",
+      runtime      = "intellij",
+    },
+  ]
+}
+
+loki.source.file "user_api" {
+  targets    = local.file_match.user_api.targets
+  forward_to = [loki.process.user_api.receiver]
+}
+
+loki.process "user_api" {
+  stage.multiline {
+    firstline     = "^\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}"
+    max_wait_time = "3s"
+    max_lines     = 256
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+local.file_match "processor_api" {
+  path_targets = [
+    {
+      __path__     = "/var/log/app/processor_api/*.log",
+      service_name = "processor_api",
+      environment  = "local",
+      runtime      = "intellij",
+    },
+  ]
+}
+
+loki.source.file "processor_api" {
+  targets    = local.file_match.processor_api.targets
+  forward_to = [loki.process.processor_api.receiver]
+}
+
+loki.process "processor_api" {
+  stage.multiline {
+    firstline     = "^\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}"
+    max_wait_time = "3s"
+    max_lines     = 256
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+local.file_match "notification_api" {
+  path_targets = [
+    {
+      __path__     = "/var/log/app/notification_api/*.log",
+      service_name = "notification_api",
+      environment  = "local",
+      runtime      = "intellij",
+    },
+  ]
+}
+
+loki.source.file "notification_api" {
+  targets    = local.file_match.notification_api.targets
+  forward_to = [loki.process.notification_api.receiver]
+}
+
+loki.process "notification_api" {
+  stage.multiline {
+    firstline     = "^\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}"
+    max_wait_time = "3s"
+    max_lines     = 256
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+local.file_match "ai_agent_api" {
+  path_targets = [
+    {
+      __path__     = "/var/log/app/ai_agent_api/*.log",
+      service_name = "ai_agent_api",
+      environment  = "local",
+      runtime      = "intellij",
+    },
+  ]
+}
+
+loki.source.file "ai_agent_api" {
+  targets    = local.file_match.ai_agent_api.targets
+  forward_to = [loki.process.ai_agent_api.receiver]
+}
+
+loki.process "ai_agent_api" {
+  stage.multiline {
+    firstline     = "^\\d{4}-\\d{2}-\\d{2}[ T]\\d{2}:\\d{2}:\\d{2}"
+    max_wait_time = "3s"
+    max_lines     = 256
+  }
+
+  forward_to = [loki.write.local.receiver]
+}

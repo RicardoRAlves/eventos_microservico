@@ -3,3 +3,27 @@ server:
 
 ai:
   model: qwen2.5-coder:3b
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+      distribution:
+        percentiles-histogram:
+          http:
+            server:
+              requests=true:
+
+# Observabilidade local
+logging:
+  file:
+    name: ${LOG_FILE_PATH:C:/Users/Ricardo/Desktop/Projetos/Events_Microservice/observability/logs/ai_agent_api/ai_agent_api.log}
+  level:
+    root: INFO
+    com:
+      bonfim: INFO
