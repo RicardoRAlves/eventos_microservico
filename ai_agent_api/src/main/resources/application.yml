@@ -1,29 +1,37 @@
 server:
   port: 8085
 
-ai:
-  model: qwen2.5-coder:3b
+spring:
+  ai:
+    retry:
+      max-attempts: 1
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: ${AI_MODEL:qwen2.5:3b}
+          temperature: 0.3
 
 management:
   endpoints:
     web:
       exposure:
         include: health,info,prometheus
+
   prometheus:
     metrics:
       export:
         enabled: true
-      distribution:
-        percentiles-histogram:
-          http:
-            server:
-              requests=true:
 
-# Observabilidade local
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
 logging:
   file:
     name: ${LOG_FILE_PATH:C:/Users/Ricardo/Desktop/Projetos/Events_Microservice/observability/logs/ai_agent_api/ai_agent_api.log}
+
   level:
     root: INFO
-    com:
-      bonfim: INFO
+    com.culturaconecta.ai: INFO
