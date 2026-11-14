@@ -3,9 +3,4 @@
 /eventApi_accessKeys.csv
 /variaveis.env
 /variaveis.local.env
-/observability/logs/ai_agent_api/.*
-/observability/logs/event_api/.*
-/observability/logs/notification_api/.*
-/observability/logs/organization_api/.*
-/observability/logs/processor_api/.*
-/observability/logs/user_api/.*
+/observability/logs/
