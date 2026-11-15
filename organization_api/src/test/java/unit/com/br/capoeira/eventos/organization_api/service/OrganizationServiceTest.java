@@ -11,10 +11,14 @@ import com.br.capoeira.eventos.organization_api.repository.OrganizationRepositor
 import com.br.capoeira.eventos.organization_api.repository.OrganizationUnitRepository;
 import com.br.capoeira.eventos.organization_api.restClient.UserClient;
 import com.br.capoeira.eventos.organization_api.service.OrganizationService;
+import com.br.capoeira.eventos.organization_api.service.OrganizationKeyNormalizer;
+import com.br.capoeira.eventos.organization_api.service.JoinCodeGenerator;
+import com.br.capoeira.eventos.organization_api.service.aws.S3Service;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -45,6 +49,15 @@ class OrganizationServiceTest {
     @Mock
     private UserClient userClient;
 
+    @Mock
+    private S3Service s3Service;
+
+    @Spy
+    private OrganizationKeyNormalizer organizationKeyNormalizer = new OrganizationKeyNormalizer();
+
+    @Mock
+    private JoinCodeGenerator joinCodeGenerator;
+
     @InjectMocks
     private OrganizationService service;
 
@@ -62,11 +75,10 @@ class OrganizationServiceTest {
         when(mapper.organizationDtoToOrganization(any(OrganizationCreateRequestDto.class)))
                 .thenReturn(organization);
 
-        when(organizationRepository.save(any(Organization.class)))
+        when(organizationRepository.saveAndFlush(any(Organization.class)))
                 .thenReturn(savedOrganization);
 
-        when(organizationUnitRepository.existsByJoinCode(anyString()))
-                .thenReturn(false);
+        when(joinCodeGenerator.generateUnique()).thenReturn("ABC123");
 
         when(organizationUnitRepository.save(any(OrganizationUnit.class)))
                 .thenAnswer(invocation -> {
@@ -104,13 +116,11 @@ class OrganizationServiceTest {
                 any(OrganizationCreateRequestDto.class)
         );
 
-        verify(organizationRepository).save(
+        verify(organizationRepository).saveAndFlush(
                 any(Organization.class)
         );
 
-        verify(organizationUnitRepository).existsByJoinCode(
-                anyString()
-        );
+        verify(joinCodeGenerator).generateUnique();
 
         verify(organizationUnitRepository).save(
                 any(OrganizationUnit.class)
@@ -173,7 +183,7 @@ class OrganizationServiceTest {
 
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(organization));
         when(mapper.organizationUnitDtoToOrganizationUnit(any())).thenReturn(organizationUnit);
-        when(organizationUnitRepository.existsByJoinCode(anyString())).thenReturn(false);
+        when(joinCodeGenerator.generateUnique()).thenReturn("ABC123");
         when(organizationUnitRepository.save(any(OrganizationUnit.class))).thenReturn(organizationUnit);
         when(mapper.organizationUnitToResponseDto(any(OrganizationUnit.class))).thenReturn(responseDto);
 
@@ -184,7 +194,7 @@ class OrganizationServiceTest {
 
         verify(organizationRepository).findById(anyLong());
         verify(mapper).organizationUnitDtoToOrganizationUnit(any());
-        verify(organizationUnitRepository).existsByJoinCode(anyString());
+        verify(joinCodeGenerator).generateUnique();
         verify(organizationUnitRepository).save(any(OrganizationUnit.class));
         verify(mapper).organizationUnitToResponseDto(any(OrganizationUnit.class));
     }
@@ -211,7 +221,7 @@ class OrganizationServiceTest {
         var responseDto = getMockOrganizationResponseDto();
 
         when(organizationRepository.findById(anyLong())).thenReturn(Optional.of(organization));
-        when(organizationRepository.save(any(Organization.class))).thenReturn(organization);
+        when(organizationRepository.saveAndFlush(any(Organization.class))).thenReturn(organization);
         when(mapper.organizationToResponseDto(any(Organization.class))).thenReturn(responseDto);
 
         var result = service.update(dto);
@@ -221,7 +231,7 @@ class OrganizationServiceTest {
 
         verify(organizationRepository).findById(anyLong());
         verify(mapper).updateOrganizationFromDto(eq(dto), any(Organization.class));
-        verify(organizationRepository).save(any(Organization.class));
+        verify(organizationRepository).saveAndFlush(any(Organization.class));
         verify(mapper).organizationToResponseDto(any(Organization.class));
     }
 
@@ -236,7 +246,7 @@ class OrganizationServiceTest {
                 .hasMessageContaining("Organization not found");
 
         verify(organizationRepository).findById(anyLong());
-        verify(organizationRepository, never()).save(any());
+        verify(organizationRepository, never()).saveAndFlush(any());
         verify(mapper, never()).updateOrganizationFromDto(any(), any());
     }
 

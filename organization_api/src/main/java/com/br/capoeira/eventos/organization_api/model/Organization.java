@@ -26,7 +26,18 @@ public class Organization {
     private String name;
 
     @NotNull
-    @Column(nullable = false)
+    @Setter(AccessLevel.NONE)
+    @Column(
+            name = "organization_key",
+            nullable = false,
+            unique = true,
+            length = 120,
+            updatable = true
+    )
+    private String organizationKey;
+
+    @NotNull
+    @Column(nullable = false, length = 1000)
     private String description;
 
     @NotNull
@@ -57,5 +68,9 @@ public class Organization {
     @PreUpdate
     public void preUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public void assignOrganizationKey(String organizationKey) {
+        this.organizationKey = organizationKey;
     }
 }

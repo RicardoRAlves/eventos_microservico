@@ -132,6 +132,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
+      INITIAL_DATA_SEED_ENABLED: "false"
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: organization_api
@@ -153,6 +154,7 @@ services:
       rabbitmq:
         condition: service_healthy
     environment:
+      INITIAL_DATA_SEED_ENABLED: "false"
       RABBIT_HOST: rabbitmq
       RABBIT_PORT: 5672
       RABBIT_USERNAME: rabbitmq

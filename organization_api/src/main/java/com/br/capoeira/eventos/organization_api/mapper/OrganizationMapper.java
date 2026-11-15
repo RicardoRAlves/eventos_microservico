@@ -16,6 +16,11 @@ import org.mapstruct.MappingTarget;
 @Mapper(componentModel = "spring")
 public interface OrganizationMapper {
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "organizationKey", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "units", ignore = true)
     Organization organizationDtoToOrganization(OrganizationCreateRequestDto input);
 
     @Mapping(target = "units", source = "units")
@@ -35,6 +40,9 @@ public interface OrganizationMapper {
     OrganizationUnitResponseDto organizationUnitToResponseDto(OrganizationUnit input);
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "organizationKey", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "units", ignore = true)
     void updateOrganizationFromDto(OrganizationUpdateDto input, @MappingTarget Organization organization);
 

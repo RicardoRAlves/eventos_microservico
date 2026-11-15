@@ -13,4 +13,6 @@ public interface OrganizationUnitRepository extends JpaRepository<OrganizationUn
     boolean existsByJoinCode(String joinCode);
 
     Optional<OrganizationUnit> findByJoinCode(String joinCode);
+
+    Optional<OrganizationUnit> findByOrganization_IdAndName(Long organizationId, String name);
 }

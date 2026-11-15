@@ -45,6 +45,27 @@ public class UserService {
         return mapper.userToResponseDto(getUserByEmailOrThrow(email));
     }
 
+    @Transactional
+    public UserResponseDto ensureInitialAdmin(InitialAdminSeedRequestDto request) {
+        if (request == null) {
+            throw new ValidationException("Initial administrator request must be informed");
+        }
+
+        return repository.findByEmail(request.email())
+                .map(mapper::userToResponseDto)
+                .orElseGet(() -> {
+                    User user = User.builder()
+                            .name(request.name())
+                            .email(request.email())
+                            .password(passwordEncoder.encode(request.password()))
+                            .avatarUrl(request.avatarUrl())
+                            .role(Role.CLIENT)
+                            .active(true)
+                            .build();
+                    return mapper.userToResponseDto(repository.saveAndFlush(user));
+                });
+    }
+
     public PageResponseDto<UserResponseDto> findAllByOrganizationId(
             Long organizationId,
             Long organizationUnitId,
