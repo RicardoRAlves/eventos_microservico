@@ -11,6 +11,7 @@ public class MockUtils {
         var organization = new Organization();
         organization.setId(1L);
         organization.setName("Grupo Bonfim");
+        organization.assignOrganizationKey("grupo-bonfim");
         organization.setDescription("Grupo de capoeira tradicional");
         organization.setLogoUrl("https://my-bucket.s3.amazonaws.com/logo.jpg");
         organization.setActive(true);
@@ -116,6 +117,7 @@ public class MockUtils {
         var dto = new OrganizationResponseDto();
         dto.setId(1L);
         dto.setName("Grupo de Capoeira Nosso Senhor do Bonfim");
+        dto.setOrganizationKey("grupo-de-capoeira-nosso-senhor-do-bonfim");
         dto.setDescription("Grupo tradicional de capoeira com atuação em diversas cidades.");
         dto.setLogoUrl("https://meusite.com/images/bonfim-logo.png");
         dto.setActive(true);

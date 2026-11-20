@@ -2,6 +2,7 @@ package com.br.capoeira.eventos.organization_api.controller;
 
 import com.br.capoeira.eventos.organization_api.config.SecurityConfig;
 import com.br.capoeira.eventos.organization_api.config.exception.GlobalHandlerException;
+import com.br.capoeira.eventos.organization_api.config.exception.OrganizationKeyConflictException;
 import com.br.capoeira.eventos.organization_api.dto.*;
 import com.br.capoeira.eventos.organization_api.service.OrganizationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -54,6 +56,7 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
+                .andExpect(jsonPath("$.organizationKey").value(responseDto.getOrganizationKey()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
@@ -162,11 +165,43 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
+                .andExpect(jsonPath("$.organizationKey").value(responseDto.getOrganizationKey()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));
 
         verify(service).createWithMainUnit(any(OrganizationCreateRequestDto.class));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldReturnConflictWhenOrganizationKeyAlreadyExists() throws Exception {
+        var requestDto = getMockOrganizationCreateRequestDto();
+        when(service.createWithMainUnit(any(OrganizationCreateRequestDto.class)))
+                .thenThrow(new OrganizationKeyConflictException());
+
+        mockMvc.perform(post("/api/v1/organizacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.error").value("ORGANIZATION_KEY_ALREADY_EXISTS"))
+                .andExpect(jsonPath("$.message")
+                        .value(OrganizationKeyConflictException.DEFAULT_MESSAGE));
+    }
+
+    @Test
+    @WithMockUser
+    void shouldNotConvertUnrelatedDataIntegrityViolationToOrganizationKeyConflict() throws Exception {
+        var requestDto = getMockOrganizationCreateRequestDto();
+        when(service.createWithMainUnit(any(OrganizationCreateRequestDto.class)))
+                .thenThrow(new DataIntegrityViolationException("unrelated constraint"));
+
+        mockMvc.perform(post("/api/v1/organizacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestDto)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error").value("DATA_INTEGRITY_ERROR"));
     }
 
     @Test
@@ -244,6 +279,7 @@ class OrganizationControllerIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(responseDto.getId()))
                 .andExpect(jsonPath("$.name").value(responseDto.getName()))
+                .andExpect(jsonPath("$.organizationKey").value(responseDto.getOrganizationKey()))
                 .andExpect(jsonPath("$.description").value(responseDto.getDescription()))
                 .andExpect(jsonPath("$.logoUrl").value(responseDto.getLogoUrl()))
                 .andExpect(jsonPath("$.active").value(responseDto.getActive()));

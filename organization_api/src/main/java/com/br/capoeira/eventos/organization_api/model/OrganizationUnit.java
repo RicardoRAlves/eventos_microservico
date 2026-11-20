@@ -13,7 +13,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "organization_unit")
+@Table(
+        name = "organization_unit",
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_organization_unit_organization_name",
+                columnNames = {"organization_id", "name"}
+        )
+)
 public class OrganizationUnit {
 
     @Id
@@ -29,7 +35,7 @@ public class OrganizationUnit {
     private String name;
 
     @NotNull
-    @Column(nullable = false)
+    @Column(nullable = false, length = 1000)
     private String description;
 
     @NotNull

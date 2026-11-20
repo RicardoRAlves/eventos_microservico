@@ -15,6 +15,7 @@ public class OrganizationResponseDto {
 
     private Long id;
     private String name;
+    private String organizationKey;
     private String description;
     private String logoUrl;
     private Boolean active;

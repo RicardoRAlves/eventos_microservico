@@ -1,0 +1,19 @@
+{
+  "source": "Dossie_Bonfim.pdf",
+  "organization": {
+    "name": "Associação de Capoeira Nosso Senhor do Bonfim",
+    "expectedKey": "associacao-de-capoeira-nosso-senhor-do-bonfim",
+    "description": "A Associação de Capoeira Nosso Senhor do Bonfim reúne uma trajetória de preservação e transmissão da capoeira, conectando mestres, professores e praticantes por meio do ensino, da musicalidade, das rodas e dos encontros culturais. Sua história está ligada ao trabalho de Reginaldo Santana, Grão Mestre Régis, com origem em Passos, Minas Gerais, e atuação documentada em diferentes localidades brasileiras. A associação valoriza a memória, a formação de novas gerações e a continuidade das tradições afro-brasileiras."
+  },
+  "unit": {
+    "name": "Jundiai - Mestre Kaue",
+    "description": "Núcleo da Associação de Capoeira Nosso Senhor do Bonfim em Jundiaí, São Paulo, sob a responsabilidade de Carlos Alberto da Silva, Mestre Kauê. Com atividades documentadas desde 2 de fevereiro de 1990, desenvolve um trabalho dedicado ao ensino da capoeira, à musicalidade, à formação de crianças e jovens, às rodas, aos batizados e à participação em eventos culturais e esportivos, contribuindo para a preservação e a transmissão dessa tradição entre gerações.",
+    "city": "Jundiaí",
+    "state": "SP",
+    "country": "Brasil",
+    "address": "Rua José Dainese, 105 — Vila Municipal",
+    "contactEmail": "capoeirabonfimjundiai@gmail.com",
+    "documentedResponsible": "Carlos Alberto da Silva — Mestre Kauê",
+    "contactDataRequiresCurrentConfirmation": true
+  }
+}

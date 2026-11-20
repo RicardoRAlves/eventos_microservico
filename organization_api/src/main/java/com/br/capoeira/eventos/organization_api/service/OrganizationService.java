@@ -1,6 +1,7 @@
 package com.br.capoeira.eventos.organization_api.service;
 
 import com.br.capoeira.eventos.organization_api.dto.*;
+import com.br.capoeira.eventos.organization_api.config.exception.OrganizationKeyConflictException;
 import com.br.capoeira.eventos.organization_api.config.exception.ValidationException;
 import com.br.capoeira.eventos.organization_api.mapper.OrganizationMapper;
 import com.br.capoeira.eventos.organization_api.model.Organization;
@@ -19,7 +20,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.ThreadLocalRandom;
 
 import static org.springframework.util.ObjectUtils.isEmpty;
 
@@ -28,14 +28,13 @@ import static org.springframework.util.ObjectUtils.isEmpty;
 @RequiredArgsConstructor
 public class OrganizationService {
 
-    private static final String JOIN_CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private static final int JOIN_CODE_LENGTH = 6;
-
     private final OrganizationMapper mapper;
     private final OrganizationRepository organizationRepository;
     private final OrganizationUnitRepository organizationUnitRepository;
     private final UserClient userClient;
     private final S3Service s3Service;
+    private final OrganizationKeyNormalizer organizationKeyNormalizer;
+    private final JoinCodeGenerator joinCodeGenerator;
 
     public OrganizationResponseDto findOrganizationById(Long id) {
         if (id == null) {
@@ -104,11 +103,14 @@ public class OrganizationService {
         var organization = mapper.organizationDtoToOrganization(dto);
 
         checkOrganization(organization);
+        var organizationKey = normalizeOrganizationKey(organization.getName());
+        ensureOrganizationKeyAvailable(organizationKey);
+        organization.assignOrganizationKey(organizationKey);
 
-        var savedOrganization = organizationRepository.save(organization);
+        var savedOrganization = organizationRepository.saveAndFlush(organization);
 
         var mainUnit = buildMainUnit(dto.getMainUnit(), savedOrganization);
-        mainUnit.setJoinCode(generateUniqueJoinCode());
+        mainUnit.setJoinCode(joinCodeGenerator.generateUnique());
 
         checkOrganizationUnit(mainUnit);
 
@@ -135,7 +137,7 @@ public class OrganizationService {
 
         var organizationUnit = mapper.organizationUnitDtoToOrganizationUnit(dto);
         organizationUnit.setOrganization(organization);
-        organizationUnit.setJoinCode(generateUniqueJoinCode());
+        organizationUnit.setJoinCode(joinCodeGenerator.generateUnique());
 
         checkOrganizationUnit(organizationUnit);
 
@@ -144,6 +146,7 @@ public class OrganizationService {
         return mapper.organizationUnitToResponseDto(savedUnit);
     }
 
+    @Transactional
     public OrganizationResponseDto update(OrganizationUpdateDto dto) {
         if (dto == null) {
             throw new ValidationException("Organization must be informed");
@@ -155,11 +158,22 @@ public class OrganizationService {
         var organization = organizationRepository.findById(dto.getId())
                 .orElseThrow(() -> new ValidationException("Organization not found"));
 
+        var newOrganizationKey = normalizeOrganizationKey(dto.getName());
+        var organizationKeyChanged = !newOrganizationKey.equals(organization.getOrganizationKey());
+
+        if (organizationKeyChanged) {
+            ensureOrganizationKeyAvailable(newOrganizationKey);
+        }
+
         mapper.updateOrganizationFromDto(dto, organization);
+
+        if (organizationKeyChanged) {
+            organization.assignOrganizationKey(newOrganizationKey);
+        }
 
         checkOrganization(organization);
 
-        var savedOrganization = organizationRepository.save(organization);
+        var savedOrganization = organizationRepository.saveAndFlush(organization);
 
         return mapper.organizationToResponseDto(savedOrganization);
     }
@@ -219,33 +233,6 @@ public class OrganizationService {
                 .build();
     }
 
-    private String generateUniqueJoinCode() {
-        String code;
-        int attempts = 0;
-
-        do {
-            code = generateJoinCode();
-            attempts++;
-
-            if (attempts > 20) {
-                throw new ValidationException("Could not generate a unique join code");
-            }
-        } while (organizationUnitRepository.existsByJoinCode(code));
-
-        return code;
-    }
-
-    private String generateJoinCode() {
-        var sb = new StringBuilder(JOIN_CODE_LENGTH);
-
-        for (int i = 0; i < JOIN_CODE_LENGTH; i++) {
-            int index = ThreadLocalRandom.current().nextInt(JOIN_CODE_CHARS.length());
-            sb.append(JOIN_CODE_CHARS.charAt(index));
-        }
-
-        return sb.toString();
-    }
-
     private void checkOrganizationUnit(OrganizationUnit organizationUnit) {
         if (organizationUnit == null) {
             throw new ValidationException("Organization unit must be informed");
@@ -300,6 +287,20 @@ public class OrganizationService {
         }
         if (organization.getActive() == null) {
             throw new ValidationException("Organization active status must be informed");
+        }
+    }
+
+    private String normalizeOrganizationKey(String name) {
+        try {
+            return organizationKeyNormalizer.normalize(name);
+        } catch (IllegalArgumentException e) {
+            throw new ValidationException(e.getMessage());
+        }
+    }
+
+    private void ensureOrganizationKeyAvailable(String organizationKey) {
+        if (organizationRepository.existsByOrganizationKey(organizationKey)) {
+            throw new OrganizationKeyConflictException();
         }
     }
 

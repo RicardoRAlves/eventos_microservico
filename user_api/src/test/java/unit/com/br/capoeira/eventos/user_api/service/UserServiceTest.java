@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -84,6 +85,88 @@ class UserServiceTest {
 
         assertEquals("Id must be informed", ex.getMessage());
         verify(repository, never()).findById(any());
+    }
+
+    @Test
+    void shouldCreateInitialAdministratorOnlyWhenEmailDoesNotExist() {
+        var request = new InitialAdminSeedRequestDto(
+                "Initial Administrator",
+                "initial@test.local",
+                "environment-secret",
+                "https://assets.test/admin.png"
+        );
+        var response = new UserResponseDto();
+        response.setId(1L);
+        response.setEmail(request.email());
+
+        when(repository.findByEmail(request.email())).thenReturn(Optional.empty());
+        when(passwordEncoder.encode(request.password())).thenReturn("encoded-secret");
+        when(repository.saveAndFlush(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            user.setId(1L);
+            return user;
+        });
+        when(mapper.userToResponseDto(any(User.class))).thenReturn(response);
+
+        var result = service.ensureInitialAdmin(request);
+
+        assertEquals(response, result);
+        var captor = ArgumentCaptor.forClass(User.class);
+        verify(repository).saveAndFlush(captor.capture());
+        User created = captor.getValue();
+        assertEquals(request.name(), created.getName());
+        assertEquals(request.email(), created.getEmail());
+        assertEquals("encoded-secret", created.getPassword());
+        assertEquals(request.avatarUrl(), created.getAvatarUrl());
+        assertEquals(Role.CLIENT, created.getRole());
+        assertTrue(created.getActive());
+    }
+
+    @Test
+    void shouldReturnExistingInitialAdministratorWithoutOverwritingChanges() {
+        var request = new InitialAdminSeedRequestDto(
+                "Seed Name",
+                "initial@test.local",
+                "new-secret",
+                "https://assets.test/seed-avatar.png"
+        );
+        User existing = getMockUser(7L, Role.SUPER_ADMIN, false);
+        existing.setName("Administrator Custom Name");
+        existing.setEmail(request.email());
+        existing.setPassword("existing-password-hash");
+        existing.setAvatarUrl("https://assets.test/custom-avatar.png");
+        existing.setOrganizationId(10L);
+        existing.setOrganizationUnitId(20L);
+        var response = new UserResponseDto();
+        response.setId(existing.getId());
+
+        when(repository.findByEmail(request.email())).thenReturn(Optional.of(existing));
+        when(mapper.userToResponseDto(existing)).thenReturn(response);
+
+        var result = service.ensureInitialAdmin(request);
+
+        assertEquals(response, result);
+        assertEquals("Administrator Custom Name", existing.getName());
+        assertEquals("existing-password-hash", existing.getPassword());
+        assertEquals("https://assets.test/custom-avatar.png", existing.getAvatarUrl());
+        assertFalse(existing.getActive());
+        assertEquals(Role.SUPER_ADMIN, existing.getRole());
+        assertEquals(10L, existing.getOrganizationId());
+        assertEquals(20L, existing.getOrganizationUnitId());
+        verifyNoInteractions(passwordEncoder);
+        verify(repository, never()).save(any());
+        verify(repository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void shouldRejectNullInitialAdministratorRequest() {
+        var exception = assertThrows(
+                ValidationException.class,
+                () -> service.ensureInitialAdmin(null)
+        );
+
+        assertEquals("Initial administrator request must be informed", exception.getMessage());
+        verifyNoInteractions(repository, passwordEncoder);
     }
 
     @Test
